@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  uptime-kuma:
+    build:
+      context: ./uptime-kuma
+      dockerfile: Dockerfile
+    volumes:
+      - agency-uptime-data:/app/data
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - agency-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  mcp-monitoring:
+    build:
+      context: ./mcp-monitoring
+    env_file:
+      - ./mcp-monitoring/.env
+    container_name: mcp-agent
+    volumes:
+      - mcp-logs:/app/logs
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      # Monitor the Uptime Kuma instance on the same network
+      - UPTIME_KUMA_URL=http://uptime-kuma:3001
+      # Credentials should be loaded from the included .env file
+    depends_on:
+      - uptime-kuma
+    networks:
+      - agency-network
+    restart: unless-stopped
+
+networks:
+  agency-network:
+    driver: bridge
+
+volumes:
+  agency-uptime-data:
+  mcp-logs:

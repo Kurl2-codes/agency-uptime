@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "uptime-kuma": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@davidfuchs/mcp-uptime-kuma"
+      ],
+      "env": {
+        "UPTIME_KUMA_URL": "http://uptime-kuma:3001",
+        "UPTIME_KUMA_USERNAME": "silva",
+        "UPTIME_KUMA_PASSWORD": "@Secret"
+      }
+    }
+  }
+}

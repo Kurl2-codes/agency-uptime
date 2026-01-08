@@ -1,0 +1,12 @@
+services:
+  uptime-kuma:
+    image: agency-uptime:latest
+    build: .
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+    environment:
+      - UPTIME_KUMA_DB_HOSTNAME=host.docker.internal
+    ports:
+      # <Host Port>:<Container Port>
+      - "3001:3001"

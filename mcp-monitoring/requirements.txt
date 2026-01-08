@@ -1,0 +1,12 @@
+langgraph
+langchain
+langchain-core
+mcp
+python-dotenv
+httpx
+langchain-openai
+fastapi
+uvicorn
+rich
+mysql-connector-python
+python-whois

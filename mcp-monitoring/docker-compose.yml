@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  sre-agent:
+    build: .
+    container_name: sre-agent
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./logs:/app/logs # Persist logs
+      - ./.env:/app/.env # Mount .env for secrets
+      - ./mcp_server_config.json:/app/mcp_server_config.json # Mount config
+    environment:
+      - PYTHONUNBUFFERED=1
+      - UPTIME_KUMA_URL=${UPTIME_KUMA_URL:-http://host.docker.internal:3001}
+      - UPTIME_KUMA_USERNAME=${UPTIME_KUMA_USERNAME}
+      - UPTIME_KUMA_PASSWORD=${UPTIME_KUMA_PASSWORD}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  uptime-kuma:
+    image: agency-uptime:latest
+    build:
+      context: ../../uptime-kuma
+    volumes:
+      - ../../uptime-kuma/data:/app/data
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
