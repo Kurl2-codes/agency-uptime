@@ -355,13 +355,14 @@
 </template>
 
 <script lang="ts">
+import { defineComponent } from "vue";
 import { Modal } from "bootstrap";
 import dayjs from "dayjs";
 import logoImg from "../assets/image.png";
 import ProfessionalPdfTemplate from "./ProfessionalPdfTemplate.vue";
 import DailyAvailabilityChart from "./DailyAvailabilityChart.vue";
 
-export default {
+export default defineComponent({
     components: {
         ProfessionalPdfTemplate,
         DailyAvailabilityChart,
@@ -501,7 +502,9 @@ export default {
             html2pdf().set(opt).from(element).save();
         },
     },
-};
+});
+
+
 </script>
 
 <style lang="scss" scoped>

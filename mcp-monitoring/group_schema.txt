@@ -1,1 +1,0 @@
-Columns: ['id', 'monitor_id', 'group_id', 'weight', 'send_url', 'custom_url']

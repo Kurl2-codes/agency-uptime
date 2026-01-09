@@ -102,6 +102,10 @@ const formatLongDuration = (ms) => {
     return formatDuration(ms);
 };
 
+// SRE Advice Cache
+const adviceCache = {};
+const MAX_CACHE_SIZE = 100;
+
 /**
  * Generate Stats for a Single Monitor
  */
@@ -284,6 +288,12 @@ async function generateSingleMonitorStats(monitorID, startDate, endDate) {
 
     // PARALLEL: Fetch advice for unique errors concurrently
     const advicePromises = errorsArray.map(async (errorMsg) => {
+        // 1. Check Cache
+        if (adviceCache[errorMsg]) {
+            console.log(`[Report] Serving cached advice for: "${errorMsg}"`);
+            return { errorMsg, advice: adviceCache[errorMsg] };
+        }
+
         const exampleEvent = downtimeEvents.find(e => e.msg === errorMsg);
         const durationContext = exampleEvent ? exampleEvent.durationStr : "unknown";
 
@@ -298,7 +308,16 @@ async function generateSingleMonitorStats(monitorID, startDate, endDate) {
         `.trim().replace(/\s+/g, " ");
 
         try {
+            console.log(`[Report] Fetching fresh advice for: "${errorMsg}"`);
             const advice = await askSREAgent(prompt, `monitor-${monitorID}`);
+
+            // 2. Store in Cache
+            if (Object.keys(adviceCache).length >= MAX_CACHE_SIZE) {
+                // Simple flush if too big
+                for (const key in adviceCache) delete adviceCache[key];
+            }
+            adviceCache[errorMsg] = advice;
+
             return { errorMsg, advice };
         } catch (err) {
             console.error(`Failed to get advice for ${errorMsg}:`, err);
@@ -306,10 +325,12 @@ async function generateSingleMonitorStats(monitorID, startDate, endDate) {
         }
     });
 
-    const [adviceResults, certInfo] = await Promise.all([
+    const [adviceResults, fetchedCertInfo] = await Promise.all([
         Promise.all(advicePromises),
         certInfoPromise
     ]);
+
+    certInfo = fetchedCertInfo;
 
     adviceResults.forEach(result => {
         adviceMap[result.errorMsg] = result.advice;

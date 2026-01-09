@@ -29,6 +29,7 @@ EXPOSE 3001
 # Set Container Environment
 ENV UPTIME_KUMA_IS_CONTAINER=1
 ENV DATA_DIR=/app/data
+ENV NODE_ENV=production
 
 # Start Server
 CMD ["node", "server/server.js"]

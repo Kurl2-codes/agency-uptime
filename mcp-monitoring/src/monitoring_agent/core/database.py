@@ -4,8 +4,36 @@ import logging
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 import mysql.connector
+from mysql.connector import pooling
 
 logger = logging.getLogger("monitoring_agent.database")
+
+# Global Connection Pool
+_db_pool = None
+
+def get_db_pool():
+    global _db_pool
+    if _db_pool is None:
+        db_host = os.getenv("DB_HOST", os.getenv("UPTIME_KUMA_DB_HOST", "localhost"))
+        db_user = os.getenv("DB_USER", os.getenv("UPTIME_KUMA_DB_USER", "kuma"))
+        db_pass = os.getenv("DB_PASSWORD", os.getenv("UPTIME_KUMA_DB_PASSWORD"))
+        db_name = os.getenv("DB_NAME", os.getenv("UPTIME_KUMA_DB_NAME", "kuma"))
+        db_port = int(os.getenv("DB_PORT", os.getenv("UPTIME_KUMA_DB_PORT", 3306)))
+        
+        if not db_pass:
+             raise ValueError("DB_PASSWORD is not set")
+
+        _db_pool = mysql.connector.pooling.MySQLConnectionPool(
+            pool_name="mcp_pool",
+            pool_size=5,
+            pool_reset_session=True,
+            host=db_host,
+            user=db_user,
+            password=db_pass,
+            database=db_name,
+            port=db_port
+        )
+    return _db_pool
 
 async def query_mariadb_history(monitor_id: Optional[int] = None, start_date: str = "2025-12", downtime_only: bool = True) -> List[Dict[str, Any]]:
     """
@@ -14,22 +42,12 @@ async def query_mariadb_history(monitor_id: Optional[int] = None, start_date: st
     - start_date: Format YYYY-MM (e.g., 2025-12).
     - downtime_only: If true, only returns records where status is not UP (status != 1).
     """
-    db_host = os.getenv("DB_HOST", os.getenv("UPTIME_KUMA_DB_HOST", "localhost"))
-    db_user = os.getenv("DB_USER", os.getenv("UPTIME_KUMA_DB_USER", "kuma"))
-    db_pass = os.getenv("DB_PASSWORD", os.getenv("UPTIME_KUMA_DB_PASSWORD"))
-    db_name = os.getenv("DB_NAME", os.getenv("UPTIME_KUMA_DB_NAME", "kuma"))
-
-    if not db_pass:
-        return [{"error": "DB_PASSWORD environment variable is not set."}]
-
+    
     def _fetch():
+        conn = None
         try:
-            conn = mysql.connector.connect(
-                host=db_host,
-                user=db_user,
-                password=db_pass,
-                database=db_name
-            )
+            pool = get_db_pool()
+            conn = pool.get_connection()
             cursor = conn.cursor(dictionary=True)
             
             query = """
@@ -63,11 +81,13 @@ async def query_mariadb_history(monitor_id: Optional[int] = None, start_date: st
                         row[key] = value.isoformat()
             
             cursor.close()
-            conn.close()
             return rows
         except Exception as e:
             logger.error(f"MariaDB Error: {e}")
             return [{"error": f"Database Error: {str(e)}. Ensure credentials in .env are correct."}]
+        finally:
+            if conn and conn.is_connected():
+                conn.close()
 
     return await asyncio.to_thread(_fetch)
 
@@ -80,22 +100,12 @@ async def get_quick_stats_db() -> Dict[str, Any]:
         - agencyPerformance (0.0-1.0)
         - mttr (seconds)
     """
-    db_host = os.getenv("DB_HOST", os.getenv("UPTIME_KUMA_DB_HOST", "localhost"))
-    db_user = os.getenv("DB_USER", os.getenv("UPTIME_KUMA_DB_USER", "kuma"))
-    db_pass = os.getenv("DB_PASSWORD", os.getenv("UPTIME_KUMA_DB_PASSWORD"))
-    db_name = os.getenv("DB_NAME", os.getenv("UPTIME_KUMA_DB_NAME", "kuma"))
-
-    if not db_pass:
-        return {"error": "DB_PASSWORD environment variable is not set."}
 
     def _calc():
+        conn = None
         try:
-            conn = mysql.connector.connect(
-                host=db_host,
-                user=db_user,
-                password=db_pass,
-                database=db_name
-            )
+            pool = get_db_pool()
+            conn = pool.get_connection()
             cursor = conn.cursor(dictionary=True)
 
             # 1. Monitor Count (Active)
@@ -161,8 +171,6 @@ async def get_quick_stats_db() -> Dict[str, Any]:
             mttr = (total_downtime / resolved_incidents) if resolved_incidents > 0 else 0
 
             cursor.close()
-            conn.close()
-
             return {
                 "monitorCount": monitor_count,
                 "agencyPerformance": agency_performance,
@@ -172,5 +180,8 @@ async def get_quick_stats_db() -> Dict[str, Any]:
         except Exception as e:
             logger.error(f"MariaDB Calc Error: {e}")
             return {"error": str(e)}
+        finally:
+             if conn and conn.is_connected():
+                conn.close()
 
     return await asyncio.to_thread(_calc)

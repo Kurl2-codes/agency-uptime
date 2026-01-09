@@ -29,7 +29,9 @@ COPY . .
 EXPOSE 8000
 
 # Set environment variable for unbuffered logs
+# Set environment variable for unbuffered logs and optimization
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONOPTIMIZE=1
 
 # Command to run the API
 CMD ["python", "src/api.py"]
