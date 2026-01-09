@@ -19,3 +19,6 @@ mcp-monitoring/logs/
 # IDE
 .vscode/
 .idea/
+
+# Secrets
+mcp-monitoring/mcp_server_config.json
