@@ -2,7 +2,7 @@ import logging
 from langchain_core.tools import StructuredTool
 from mcp import ClientSession
 
-from .database import query_mariadb_history
+from .database import query_mariadb_history, get_quick_stats_db
 from .domain_utils import check_domain_expiry
 
 logger = logging.getLogger("monitoring_agent.tools")
@@ -53,5 +53,14 @@ async def create_langchain_tools(session: ClientSession):
         description="Check if a domain name is about to expire. input: domain (e.g. 'google.com'). Returns expiration date and days remaining."
     )
     lc_tools.append(domain_tool)
+
+    # 4. Add Quick Stats Tool
+    stats_tool = StructuredTool.from_function(
+        func=None,
+        coroutine=get_quick_stats_db,
+        name="getQuickStats",
+        description="Get quick stats (Monitor Count, Agency Performance, MTTR) directly from the database."
+    )
+    lc_tools.append(stats_tool)
 
     return lc_tools

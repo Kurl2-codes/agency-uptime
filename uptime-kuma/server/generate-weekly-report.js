@@ -14,6 +14,10 @@ const DB_CONFIG = {
     database: "kuma"
 };
 
+/**
+ * @param monitorUrl
+ * @param weeksAgo
+ */
 async function generateWeeklyReport(monitorUrl, weeksAgo = 0) {
     let connection;
 
@@ -23,9 +27,9 @@ async function generateWeeklyReport(monitorUrl, weeksAgo = 0) {
         console.log("✓ Connected to MariaDB database");
 
         // Find monitor by URL
-        const [monitors] = await connection.execute(
+        const [ monitors ] = await connection.execute(
             "SELECT id, name, url FROM monitor WHERE url = ?",
-            [monitorUrl]
+            [ monitorUrl ]
         );
 
         if (monitors.length === 0) {
@@ -37,14 +41,14 @@ async function generateWeeklyReport(monitorUrl, weeksAgo = 0) {
         console.log(`✓ Found monitor: ${monitor.name} (ID: ${monitor.id})`);
 
         // Calculate date range for the week
-        const endDate = dayjs().subtract(weeksAgo, 'week').endOf('week');
-        const startDate = endDate.startOf('week');
+        const endDate = dayjs().subtract(weeksAgo, "week").endOf("week");
+        const startDate = endDate.startOf("week");
 
-        console.log(`\n📅 Report Period: ${startDate.format('YYYY-MM-DD')} to ${endDate.format('YYYY-MM-DD')}`);
+        console.log(`\n📅 Report Period: ${startDate.format("YYYY-MM-DD")} to ${endDate.format("YYYY-MM-DD")}`);
         console.log("─".repeat(60));
 
         // Query heartbeat data
-        const [heartbeats] = await connection.execute(
+        const [ heartbeats ] = await connection.execute(
             `SELECT 
                 status,
                 ping,
@@ -56,8 +60,8 @@ async function generateWeeklyReport(monitorUrl, weeksAgo = 0) {
              ORDER BY time ASC`,
             [
                 monitor.id,
-                startDate.format('YYYY-MM-DD HH:mm:ss'),
-                endDate.format('YYYY-MM-DD HH:mm:ss')
+                startDate.format("YYYY-MM-DD HH:mm:ss"),
+                endDate.format("YYYY-MM-DD HH:mm:ss")
             ]
         );
 
@@ -100,7 +104,7 @@ async function generateWeeklyReport(monitorUrl, weeksAgo = 0) {
         console.log(`Down Checks:         ${downChecks}`);
         console.log("");
         console.log(`Uptime:              ${uptimePercentage.toFixed(3)}%`);
-        console.log(`Avg Response Time:   ${avgPing > 0 ? avgPing.toFixed(2) + ' ms' : 'N/A'}`);
+        console.log(`Avg Response Time:   ${avgPing > 0 ? avgPing.toFixed(2) + " ms" : "N/A"}`);
         console.log("─".repeat(60));
 
         // Daily breakdown
@@ -109,9 +113,13 @@ async function generateWeeklyReport(monitorUrl, weeksAgo = 0) {
 
         const dailyStats = {};
         heartbeats.forEach(hb => {
-            const day = dayjs(hb.time).format('YYYY-MM-DD');
+            const day = dayjs(hb.time).format("YYYY-MM-DD");
             if (!dailyStats[day]) {
-                dailyStats[day] = { up: 0, down: 0, total: 0, pingSum: 0, pingCount: 0 };
+                dailyStats[day] = { up: 0,
+                    down: 0,
+                    total: 0,
+                    pingSum: 0,
+                    pingCount: 0 };
             }
             dailyStats[day].total++;
             if (hb.status === 1) {
@@ -129,7 +137,7 @@ async function generateWeeklyReport(monitorUrl, weeksAgo = 0) {
             const stats = dailyStats[day];
             const dayUptime = (stats.up / stats.total) * 100;
             const dayAvgPing = stats.pingCount > 0 ? stats.pingSum / stats.pingCount : 0;
-            console.log(`${day}  |  Uptime: ${dayUptime.toFixed(2)}%  |  Avg Ping: ${dayAvgPing > 0 ? dayAvgPing.toFixed(2) + ' ms' : 'N/A'}  |  Checks: ${stats.total}`);
+            console.log(`${day}  |  Uptime: ${dayUptime.toFixed(2)}%  |  Avg Ping: ${dayAvgPing > 0 ? dayAvgPing.toFixed(2) + " ms" : "N/A"}  |  Checks: ${stats.total}`);
         });
         console.log("─".repeat(60));
 

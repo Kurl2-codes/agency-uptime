@@ -13,8 +13,8 @@ module.exports.weeklyReportSocketHandler = (socket) => {
             checkLogin(socket);
 
             // Calculate date range for the week
-            const endDate = dayjs().subtract(weeksAgo || 0, 'week').endOf('week');
-            const startDate = endDate.startOf('week');
+            const endDate = dayjs().subtract(weeksAgo || 0, "week").endOf("week");
+            const startDate = endDate.startOf("week");
 
             // Query heartbeat data
             const heartbeats = await R.findAll(
@@ -22,8 +22,8 @@ module.exports.weeklyReportSocketHandler = (socket) => {
                 " monitor_id = ? AND time >= ? AND time <= ? ORDER BY time ASC ",
                 [
                     monitorID,
-                    startDate.format('YYYY-MM-DD HH:mm:ss'),
-                    endDate.format('YYYY-MM-DD HH:mm:ss')
+                    startDate.format("YYYY-MM-DD HH:mm:ss"),
+                    endDate.format("YYYY-MM-DD HH:mm:ss")
                 ]
             );
 
@@ -35,8 +35,8 @@ module.exports.weeklyReportSocketHandler = (socket) => {
                     totalUp: 0,
                     totalDown: 0,
                     totalChecks: 0,
-                    startDate: startDate.format('YYYY-MM-DD'),
-                    endDate: endDate.format('YYYY-MM-DD'),
+                    startDate: startDate.format("YYYY-MM-DD"),
+                    endDate: endDate.format("YYYY-MM-DD"),
                     dailyStats: []
                 });
                 return;
@@ -64,7 +64,7 @@ module.exports.weeklyReportSocketHandler = (socket) => {
                 }
 
                 // Daily stats
-                const day = dayjs(hb.time).format('YYYY-MM-DD');
+                const day = dayjs(hb.time).format("YYYY-MM-DD");
                 if (!dailyStats[day]) {
                     dailyStats[day] = {
                         date: day,
@@ -110,8 +110,8 @@ module.exports.weeklyReportSocketHandler = (socket) => {
                 totalUp: upChecks,
                 totalDown: downChecks,
                 totalChecks,
-                startDate: startDate.format('YYYY-MM-DD'),
-                endDate: endDate.format('YYYY-MM-DD'),
+                startDate: startDate.format("YYYY-MM-DD"),
+                endDate: endDate.format("YYYY-MM-DD"),
                 dailyStats: dailyStatsArray
             });
 

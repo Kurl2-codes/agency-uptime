@@ -89,7 +89,7 @@ class Database {
         "patch-added-mqtt-monitor.sql": true,
         "patch-add-clickable-status-page-link.sql": true,
         "patch-add-sqlserver-monitor.sql": true,
-        "patch-add-other-auth.sql": { parents: ["patch-monitor-basic-auth.sql"] },
+        "patch-add-other-auth.sql": { parents: [ "patch-monitor-basic-auth.sql" ] },
         "patch-grpc-monitor.sql": true,
         "patch-add-radius-monitor.sql": true,
         "patch-monitor-add-resend-interval.sql": true,
@@ -813,7 +813,7 @@ class Database {
         `);
 
         // Stop if stat_* tables are not empty
-        for (let table of ["stat_minutely", "stat_hourly", "stat_daily"]) {
+        for (let table of [ "stat_minutely", "stat_hourly", "stat_daily" ]) {
             let countResult = await R.getRow(`SELECT COUNT(*) AS count FROM ${table}`);
             let count = countResult.count;
             if (count > 0) {
@@ -852,7 +852,7 @@ class Database {
                     WHERE monitor_id = ?
                     AND DATE(time) = ?
                     ORDER BY time ASC
-                `, [monitor.monitor_id, date.date]);
+                `, [ monitor.monitor_id, date.date ]);
 
                 if (heartbeats.length > 0) {
                     msg = `[DON'T STOP] Migrating monitor data ${monitor.monitor_id} - ${date.date} [${progressPercent.toFixed(2)}%][${i}/${monitors.length}]`;

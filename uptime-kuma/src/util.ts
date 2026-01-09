@@ -28,7 +28,7 @@ export const isNode = typeof process !== "undefined" && process?.versions?.node;
  */
 const dayjs = (isNode) ? require("dayjs") : dayjsFrontend;
 
-export const appName = "Uptime Kuma";
+export const appName = "Agency Uptime";
 export const DOWN = 0;
 export const UP = 1;
 export const PENDING = 2;
@@ -115,7 +115,7 @@ const consoleModuleColors = [
     CONSOLE_STYLE_FgPink,
 ];
 
-const consoleLevelColors : Record<string, string> = {
+const consoleLevelColors: Record<string, string> = {
     "INFO": CONSOLE_STYLE_FgCyan,
     "WARN": CONSOLE_STYLE_FgYellow,
     "ERROR": CONSOLE_STYLE_FgRed,
@@ -207,7 +207,7 @@ class Logger {
      *     "info_monitor",
      *  ]
      */
-    hideLog : Record<string, string[]> = {
+    hideLog: Record<string, string[]> = {
         info: [],
         warn: [],
         error: [],
@@ -457,7 +457,7 @@ const getRandomBytes = (
             };
         }
 
-    // Node
+        // Node
         : function () {
             // eslint-disable-next-line @typescript-eslint/no-var-requires
             return require("crypto").randomBytes;
@@ -471,7 +471,7 @@ const getRandomBytes = (
  * @param max Maximum value of integer
  * @returns Cryptographically suitable random integer
  */
-export function getCryptoRandomInt(min: number, max: number):number {
+export function getCryptoRandomInt(min: number, max: number): number {
 
     // synchronous version of: https://github.com/joepie91/node-random-number-csprng
 
@@ -519,7 +519,7 @@ export function genSecret(length = 64) {
     let secret = "";
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     const charsLength = chars.length;
-    for ( let i = 0; i < length; i++ ) {
+    for (let i = 0; i < length; i++) {
         secret += chars.charAt(getCryptoRandomInt(0, charsLength - 1));
     }
     return secret;
@@ -579,7 +579,7 @@ export function parseTimeObject(time: string) {
  * @param obj object to parse
  * @returns {string} e.g. 12:00
  */
-export function parseTimeFromTimeObject(obj : any) {
+export function parseTimeFromTimeObject(obj: any) {
     if (!obj) {
         return obj;
     }
@@ -600,7 +600,7 @@ export function parseTimeFromTimeObject(obj : any) {
  * @param input Date
  * @returns ISO Date time
  */
-export function isoToUTCDateTime(input : string) {
+export function isoToUTCDateTime(input: string) {
     return dayjs(input).utc().format(SQL_DATETIME_FORMAT);
 }
 
@@ -608,7 +608,7 @@ export function isoToUTCDateTime(input : string) {
  * @param input valid datetime string
  * @returns {string} ISO DateTime string
  */
-export function utcToISODateTime(input : string) {
+export function utcToISODateTime(input: string) {
     return dayjs.utc(input).toISOString();
 }
 
@@ -618,7 +618,7 @@ export function utcToISODateTime(input : string) {
  * @param format Format to return
  * @returns A string date of SQL_DATETIME_FORMAT
  */
-export function utcToLocal(input : string, format = SQL_DATETIME_FORMAT) : string {
+export function utcToLocal(input: string, format = SQL_DATETIME_FORMAT): string {
     return dayjs.utc(input).local().format(format);
 }
 
@@ -628,7 +628,7 @@ export function utcToLocal(input : string, format = SQL_DATETIME_FORMAT) : strin
  * @param format Format to return
  * @returns Date in requested format
  */
-export function localToUTC(input : string, format = SQL_DATETIME_FORMAT) {
+export function localToUTC(input: string, format = SQL_DATETIME_FORMAT) {
     return dayjs(input).utc().format(format);
 }
 
@@ -638,7 +638,7 @@ export function localToUTC(input : string, format = SQL_DATETIME_FORMAT) {
  * @param length Default is 10 which means 0 - 9
  * @returns {number} output number
  */
-export function intHash(str : string, length = 10) : number {
+export function intHash(str: string, length = 10): number {
     // A simple hashing function (you can use more complex hash functions if needed)
     let hash = 0;
     for (let i = 0; i < str.length; i++) {

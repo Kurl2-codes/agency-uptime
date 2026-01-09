@@ -12,6 +12,9 @@ const DB_CONFIG = {
     database: "kuma"
 };
 
+/**
+ *
+ */
 async function listMonitors() {
     let connection;
 
@@ -19,7 +22,7 @@ async function listMonitors() {
         connection = await mysql.createConnection(DB_CONFIG);
         console.log("✓ Connected to MariaDB database\n");
 
-        const [monitors] = await connection.execute(
+        const [ monitors ] = await connection.execute(
             "SELECT id, name, url, type, active FROM monitor ORDER BY id"
         );
 
@@ -35,9 +38,9 @@ async function listMonitors() {
 
         monitors.forEach(m => {
             const id = String(m.id).padEnd(3);
-            const name = (m.name || '').substring(0, 23).padEnd(23);
-            const url = (m.url || '').substring(0, 38).padEnd(38);
-            const active = m.active ? '✓' : '✗';
+            const name = (m.name || "").substring(0, 23).padEnd(23);
+            const url = (m.url || "").substring(0, 38).padEnd(38);
+            const active = m.active ? "✓" : "✗";
             console.log(`${id} | ${name} | ${url} | ${active}`);
         });
 

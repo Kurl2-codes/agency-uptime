@@ -139,7 +139,7 @@
                         class="btn btn-normal"
                         @click="showReportDialog"
                     >
-                        <font-awesome-icon icon="file-alt" /> {{ $t("Report") }}
+                        <font-awesome-icon icon="file-alt" /> {{ $t("Agency Performance Report") }}
                     </button>
                 </div>
             </div>
@@ -525,8 +525,6 @@ import "prismjs/components/prism-css";
 import { PrismEditor } from "vue-prism-editor";
 import "vue-prism-editor/dist/prismeditor.min.css";
 import ScreenshotDialog from "../components/ScreenshotDialog.vue";
-
-
 
 export default {
     components: {

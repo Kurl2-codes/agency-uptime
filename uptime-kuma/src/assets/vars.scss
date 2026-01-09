@@ -7,30 +7,37 @@ $obsidian-eclipse: #121E34;
 $obsidian-tide: #1C3765;
 $black: #010101;
 $white: #FFFFFF;
+$dark-orange: #BC580A;
 
 // Standard Status Colors
 $status-up: #5cdd8b;
 $success: $status-up;
-$warning: #ffc107; // Standard Yellow/Orange for warnings
-$danger: #dc3545; // Standard Red
+$warning: #ffc107;
+$danger: #dc3545;
 $maintenance: $obsidian-tide;
 
-// Primary mappings
-$primary: $obsidian-blue;
-$link-color: $primary;
-$border-radius: 50rem;
+// Primary mappings (LIGHT THEME DEFAULT)
+$primary: $liquid-lava; // Use Liquid Lava as primary for emphasis
+$link-color: $obsidian-blue;
+$border-radius: 12px;
 $secondary-text: $taupe;
 
-$highlight: #ff9342; // lighten($liquid-lava, 10%)
+$highlight: $liquid-lava;
 $highlight-white: #fffdf9;
 
-// Dark theme variables
-$dark-font-color: $white; // Text should be light (White)
-$dark-font-color2: $light-grey; // Secondary text
-$dark-bg: $obsidian-blue; // Background Obsidian Blue
-$dark-bg2: $obsidian-eclipse; // Secondary Background
-$dark-header-bg: $obsidian-eclipse; // Header Background
+// Light Theme Specifics (These overrides are crucial)
+$dark-font-color: $obsidian-blue; // Primary Text is now Dark
+$dark-font-color2: $taupe; // Secondary Text
+$dark-bg: $white; // Main Background is White
+$dark-bg2: $white; // Card Background is White
+$dark-header-bg: $white;
 $dark-border-color: #dee2e6; // Standard light border
+
+$easing-in: cubic-bezier(0.54, 0.78, 0.55, 0.97);
+$easing-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+$easing-in-out: cubic-bezier(0.79, 0.14, 0.15, 0.86);
+
+$dropdown-border-radius: 0.5rem;
 
 $easing-in: cubic-bezier(0.54, 0.78, 0.55, 0.97);
 $easing-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);

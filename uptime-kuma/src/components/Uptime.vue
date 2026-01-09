@@ -77,7 +77,7 @@ export default {
                 return "danger";
             }
             if (this.lastHeartBeat.status === UP) {
-                 return "success";
+                return "success";
             }
             if (this.lastHeartBeat.status === PENDING) {
                 return "warning";

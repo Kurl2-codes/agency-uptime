@@ -12,7 +12,7 @@ module.exports.reportSocketHandler = (socket) => {
         try {
             checkLogin(socket);
 
-            let startDate, endDate;
+            let startDate; let endDate;
 
             if (week !== null && week !== undefined) {
                 // If week is provided, calculate start and end of that specific week in the month

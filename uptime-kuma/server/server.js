@@ -159,7 +159,6 @@ const { reportSocketHandler } = require("./socket-handlers/report-socket-handler
 const { weeklyReportSocketHandler } = require("./socket-handlers/weekly-report-socket-handler");
 const { mariadbReportHandler } = require("./socket-handlers/mariadb-report-handler");
 
-
 app.use(express.json());
 
 // Global Middleware
@@ -736,7 +735,7 @@ let needSetup = false;
                  * List of frontend-only properties that should not be saved to the database.
                  * Should clean up before saving to the database.
                  */
-                const frontendOnlyProperties = ["humanReadableInterval"];
+                const frontendOnlyProperties = [ "humanReadableInterval" ];
                 for (const prop of frontendOnlyProperties) {
                     if (prop in monitor) {
                         delete monitor[prop];
@@ -784,7 +783,7 @@ let needSetup = false;
                 let removeGroupChildren = false;
                 checkLogin(socket);
 
-                let bean = await R.findOne("monitor", " id = ? ", [monitor.id]);
+                let bean = await R.findOne("monitor", " id = ? ", [ monitor.id ]);
 
                 if (bean.user_id !== socket.userID) {
                     throw new Error("Permission denied.");
@@ -1195,7 +1194,7 @@ let needSetup = false;
             try {
                 checkLogin(socket);
 
-                let bean = await R.findOne("tag", " id = ? ", [tag.id]);
+                let bean = await R.findOne("tag", " id = ? ", [ tag.id ]);
                 if (bean == null) {
                     callback({
                         ok: false,
@@ -1227,7 +1226,7 @@ let needSetup = false;
             try {
                 checkLogin(socket);
 
-                await R.exec("DELETE FROM tag WHERE id = ? ", [tagID]);
+                await R.exec("DELETE FROM tag WHERE id = ? ", [ tagID ]);
 
                 callback({
                     ok: true,
@@ -1687,7 +1686,6 @@ let needSetup = false;
         reportSocketHandler(socket);
         weeklyReportSocketHandler(socket);
         mariadbReportHandler(socket);
-
 
         log.debug("server", "added all socket handlers");
 

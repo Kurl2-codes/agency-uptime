@@ -6,21 +6,21 @@
 
 <script>
 import {
-  Chart as ChartJS,
-  Title,
-  Tooltip,
-  Legend,
-  BarElement,
-  CategoryScale,
-  LinearScale,
-} from 'chart.js'
-import { Bar } from 'vue-chartjs'
-import dayjs from 'dayjs'
+    Chart as ChartJS,
+    Title,
+    Tooltip,
+    Legend,
+    BarElement,
+    CategoryScale,
+    LinearScale,
+} from "chart.js";
+import { Bar } from "vue-chartjs";
+import dayjs from "dayjs";
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default {
-    name: 'DailyAvailabilityChart',
+    name: "DailyAvailabilityChart",
     components: {
         Bar
     },
@@ -33,19 +33,23 @@ export default {
     computed: {
         chartData() {
             return {
-                labels: this.dailyStats.map(day => dayjs(day.date).format('MMM D')),
+                labels: this.dailyStats.map(day => dayjs(day.date).format("MMM D")),
                 datasets: [
                     {
-                        label: this.$t("Availability") + ' (%)',
+                        label: this.$t("Availability") + " (%)",
                         backgroundColor: this.dailyStats.map(day => {
-                            if (day.uptime >= 0.99) return '#5cdd8b';
-                            if (day.uptime >= 0.95) return '#f8a306';
-                            return '#dc3545';
+                            if (day.uptime >= 0.99) {
+                                return "#5cdd8b";
+                            }
+                            if (day.uptime >= 0.95) {
+                                return "#f8a306";
+                            }
+                            return "#dc3545";
                         }),
                         data: this.dailyStats.map(day => (day.uptime * 100))
                     }
                 ]
-            }
+            };
         },
         chartOptions() {
             return {
@@ -57,7 +61,7 @@ export default {
                         max: 100,
                         title: {
                             display: true,
-                            text: 'Availability (%)'
+                            text: "Availability (%)"
                         }
                     }
                 },
@@ -66,17 +70,17 @@ export default {
                         display: false
                     },
                     tooltip: {
-                         callbacks: {
-                            label: function(context) {
-                                return context.parsed.y.toFixed(2) + '%';
+                        callbacks: {
+                            label: function (context) {
+                                return context.parsed.y.toFixed(2) + "%";
                             }
                         }
                     }
                 }
-            }
+            };
         }
     }
-}
+};
 </script>
 
 <style scoped>

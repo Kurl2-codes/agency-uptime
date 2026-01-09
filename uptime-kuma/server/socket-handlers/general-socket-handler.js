@@ -17,10 +17,10 @@ let gameList = null;
 function getGameList() {
     if (gameList == null) {
         gameList = gameResolver._readGames().games.sort((a, b) => {
-            if ( a.pretty < b.pretty ) {
+            if (a.pretty < b.pretty) {
                 return -1;
             }
-            if ( a.pretty > b.pretty ) {
+            if (a.pretty > b.pretty) {
                 return 1;
             }
             return 0;
@@ -72,7 +72,7 @@ module.exports.generalSocketHandler = (socket, server) => {
                     ok: true,
                     msg: {
                         key: "foundChromiumVersion",
-                        values: [ version ],
+                        values: [version],
                     },
                     msgi18n: true,
                 });
@@ -125,6 +125,171 @@ module.exports.generalSocketHandler = (socket, server) => {
             ok: false,
             msg: "Not found",
         });
+    });
+
+
+    socket.on("getQuickStats", async (callback) => {
+        try {
+            checkLogin(socket);
+
+            // 1. Monitor Count (Active only)
+            const monitorList = server.monitorList;
+
+            let activeMonitors = Object.values(monitorList).filter(m => {
+                return m.active;
+            });
+            const monitorCount = activeMonitors.length;
+
+            // 1b. Group Count & Uptime (Agency Performance = Avg Uptime of Groups)
+            let activeGroups = activeMonitors.filter(m => m.type === "group");
+            const groupCount = activeGroups.length;
+
+            // 2. Global Uptime (All Monitors)
+            let totalGlobalUptime = 0;
+            let globalUptimeCount = 0;
+
+            // 3. Client Uptime (Groups)
+            let totalGroupUptime = 0;
+            let groupUptimeCount = 0;
+
+            const { UptimeCalculator } = require("../uptime-calculator");
+
+            // Calculate Global
+            for (const monitor of activeMonitors) {
+                try {
+                    const calc = await UptimeCalculator.getUptimeCalculator(monitor.id);
+                    const data = calc.getData(1440, "minute");
+                    totalGlobalUptime += data.uptime;
+                    globalUptimeCount++;
+                } catch (e) {
+                    log.error("getQuickStats", `Failed to calc global uptime for ${monitor.id}: ${e.message}`);
+                }
+            }
+            const globalUptime = globalUptimeCount > 0 ? (totalGlobalUptime / globalUptimeCount) : 0;
+
+            // Calculate Group
+            if (groupCount > 0) {
+                for (const monitor of activeGroups) {
+                    try {
+                        const calc = await UptimeCalculator.getUptimeCalculator(monitor.id);
+                        const data = calc.getData(1440, "minute");
+                        totalGroupUptime += data.uptime;
+                        groupUptimeCount++;
+                    } catch (e) {
+                        log.error("getQuickStats", `Failed to calc group uptime for ${monitor.id}: ${e.message}`);
+                    }
+                }
+            }
+            const groupUptime = groupUptimeCount > 0 ? (totalGroupUptime / groupUptimeCount) : 0;
+
+            // 3. Downtime Resolution (MTTR) - Last 30 Days
+            // Query important heartbeats (status changes)
+            const { R } = require("redbean-node");
+            const dayjs = require("dayjs");
+
+            const thirtyDaysAgo = dayjs().subtract(30, "day").format("YYYY-MM-DD HH:mm:ss");
+
+            // Get all important heartbeats in the last 30 days
+            // Status: 0 (DOWN), 1 (UP)
+            const heartbeats = await R.getAll(`
+                SELECT monitor_id, status, time 
+                FROM heartbeat 
+                WHERE important = 1 
+                AND time > ? 
+                ORDER BY monitor_id, time ASC
+            `, [thirtyDaysAgo]);
+
+            const calcMTTR = (relevantHeartbeats) => {
+                let totalDowntimeDuration = 0;
+                let resolvedIncidents = 0;
+                let pendingDowntimes = {};
+
+                for (const hb of relevantHeartbeats) {
+                    const monitorID = hb.monitor_id;
+                    const time = dayjs(hb.time);
+                    const status = hb.status;
+
+                    if (status === 0) { // DOWN
+                        if (!pendingDowntimes[monitorID]) {
+                            pendingDowntimes[monitorID] = time;
+                        }
+                    } else if (status === 1) { // UP
+                        if (pendingDowntimes[monitorID]) {
+                            const downTime = pendingDowntimes[monitorID];
+                            const durationSeconds = time.diff(downTime, "second");
+
+                            totalDowntimeDuration += durationSeconds;
+                            resolvedIncidents++;
+
+                            delete pendingDowntimes[monitorID];
+                        }
+                    }
+                }
+                return resolvedIncidents > 0 ? Math.round(totalDowntimeDuration / resolvedIncidents) : 0; // in seconds
+            };
+
+            const mttr = calcMTTR(heartbeats);
+
+            // 4. Per Group Stats (Uptime & MTTR)
+            const groupsData = [];
+            if (groupCount > 0) {
+                for (const group of activeGroups) {
+                    // Identify children (monitors with parent = group.id)
+                    // Note: This relies on in-memory monitorList having correct parent info.
+                    // activeMonitors is derived from server.monitorList which should have it.
+                    // We need to check ALL monitors (active or paused) for children? 
+                    // Usually we only care about Active children for uptime.
+                    // But for MTTR we might care about all? Let's stick to Active for now for consistency.
+                    const children = activeMonitors.filter(m => m.parent === group.id);
+                    const childrenIDs = children.map(m => m.id);
+
+                    // Uptime
+                    let groupTotalUptime = 0;
+                    let groupUptimeCalcCount = 0;
+
+                    for (const child of children) {
+                        try {
+                            const calc = await UptimeCalculator.getUptimeCalculator(child.id);
+                            const data = calc.getData(1440, "minute");
+                            groupTotalUptime += data.uptime;
+                            groupUptimeCalcCount++;
+                        } catch (e) { }
+                    }
+                    const avgUptime = groupUptimeCalcCount > 0 ? (groupTotalUptime / groupUptimeCalcCount) : 0;
+
+                    // MTTR
+                    const groupHeartbeats = heartbeats.filter(hb => childrenIDs.includes(hb.monitor_id));
+                    const groupMttr = calcMTTR(groupHeartbeats);
+
+                    groupsData.push({
+                        id: group.id,
+                        name: group.name,
+                        uptime: avgUptime,
+                        mttr: groupMttr,
+                        monitorCount: children.length
+                    });
+                }
+            }
+
+            callback({
+                ok: true,
+                data: {
+                    monitorCount,
+                    groupCount,
+                    agencyPerformance: globalUptime,
+                    groupUptime,
+                    mttr,
+                    groupsData, // New: List of groups with specific stats
+                }
+            });
+
+        } catch (e) {
+            log.error("getQuickStats", e);
+            callback({
+                ok: false,
+                msg: e.message,
+            });
+        }
     });
 
     // Disconnect all other socket clients of the user
