@@ -1,91 +1,78 @@
 <template>
-    <div class="daily-availability-chart">
-        <Bar :data="chartData" :options="chartOptions" />
+    <!-- Atlassian-style Uptime Timeline -->
+    <div class="daily-availability-chart-container">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+             <span class="small text-muted fw-bold font-inter">90 Days Uptime History</span>
+             <span class="small text-muted font-inter">100%</span>
+        </div>
+        <div class="daily-availability-chart d-flex align-items-end w-100" style="gap: 2px;">
+            <div 
+                v-for="(day, index) in dailyStats" 
+                :key="index"
+                class="uptime-bar"
+                :class="getBarClass(day.uptime)"
+                :style="{ backgroundColor: getBarColor(day.uptime) }"
+                :title="formatTooltip(day)"
+            ></div>
+        </div>
     </div>
 </template>
 
 <script>
-import {
-    Chart as ChartJS,
-    Title,
-    Tooltip,
-    Legend,
-    BarElement,
-    CategoryScale,
-    LinearScale,
-} from "chart.js";
-import { Bar } from "vue-chartjs";
 import dayjs from "dayjs";
-
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default {
     name: "DailyAvailabilityChart",
-    components: {
-        Bar
-    },
     props: {
         dailyStats: {
             type: Array,
             required: true
         }
     },
-    computed: {
-        chartData() {
-            return {
-                labels: this.dailyStats.map(day => dayjs(day.date).format("MMM D")),
-                datasets: [
-                    {
-                        label: this.$t("Availability") + " (%)",
-                        backgroundColor: this.dailyStats.map(day => {
-                            if (day.uptime >= 0.99) {
-                                return "#5cdd8b";
-                            }
-                            if (day.uptime >= 0.95) {
-                                return "#f8a306";
-                            }
-                            return "#dc3545";
-                        }),
-                        data: this.dailyStats.map(day => (day.uptime * 100))
-                    }
-                ]
-            };
+    methods: {
+        getBarColor(uptime) {
+             // Atlassian-like colors
+             // Green (High Uptime)
+             if (uptime >= 0.99) return "#10b981"; 
+             // Orange (Degraded)
+             if (uptime >= 0.90) return "#f59e0b"; 
+             // Red (Outage)
+             return "#ef4444"; 
         },
-        chartOptions() {
-            return {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        title: {
-                            display: true,
-                            text: "Availability (%)"
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                return context.parsed.y.toFixed(2) + "%";
-                            }
-                        }
-                    }
-                }
-            };
+        getBarClass(uptime) {
+            return ""; 
+        },
+        formatTooltip(day) {
+            return `${dayjs(day.date).format("MMM D")}: ${(day.uptime * 100).toFixed(2)}%`;
         }
     }
 };
 </script>
 
 <style scoped>
-.daily-availability-chart {
-    height: 300px;
+.daily-availability-chart-container {
     width: 100%;
+    /* Let parent control height, but this inner part handles the bars */
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.daily-availability-chart {
+    height: 34px; /* Fixed height for the bars like the screenshot */
+    width: 100%;
+}
+
+.uptime-bar {
+    flex: 1;
+    height: 100%;
+    min-width: 3px;
+    border-radius: 2px;
+    transition: opacity 0.2s;
+}
+
+.uptime-bar:hover {
+    opacity: 0.8;
 }
 </style>

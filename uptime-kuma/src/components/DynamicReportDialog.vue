@@ -377,6 +377,7 @@ import dayjs from "dayjs";
 import logoImg from "../assets/image.png";
 import ProfessionalPdfTemplate from "./ProfessionalPdfTemplate.vue";
 import DailyAvailabilityChart from "./DailyAvailabilityChart.vue";
+import { jsPDF } from "jspdf";
 
 export default defineComponent({
     components: {
@@ -500,22 +501,35 @@ export default defineComponent({
                 return;
             }
 
-            const opt = {
-                margin: [ 0, 0, 0, 0 ], // No margins, let the template handle padding
-                filename: `uptime-report-${this.monitorId}-${dayjs().format("YYYYMMDD")}.pdf`,
-                image: { type: "jpeg",
-                    quality: 0.98 },
-                html2canvas: { scale: 1.5,
-                    useCORS: true,
-                    logging: false,
-                    scrollY: 0 },
-                jsPDF: { unit: "in",
-                    format: "letter",
-                    orientation: "portrait" }
-            };
+            // Using pure jsPDF html method for somewhat selectable text.
+            // Note: This is still experimental in jsPDF but better than html2pdf for text.
+            const doc = new jsPDF({
+                orientation: "portrait",
+                unit: "pt",
+                format: "letter"
+            });
 
-            // @ts-ignore
-            html2pdf().set(opt).from(element).save();
+            // 800px * 0.7 = 560pt. Letter width = 612pt.
+            // Margin left/right approx (612 - 560) / 2 = 26pt to center.
+            
+            doc.html(element, {
+                callback: function (doc) {
+                    doc.save(`uptime-report.pdf`);
+                },
+                x: 26, // Centering offset (calculated)
+                y: 20, // Top margin offset
+                html2canvas: {
+                    scale: 0.7, 
+                    useCORS: true, 
+                    allowTaint: true,
+                    letterRendering: true,
+                    scrollY: 0,
+                },
+                width: 800, 
+                windowWidth: 800,
+                margin: [20, 0, 20, 0], // Extra top/bottom auto-paging margins
+                autoPaging: "text"
+            });
         },
 
         retryAnalysis(monitorID, analysisItem) {

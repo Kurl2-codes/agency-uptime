@@ -16,42 +16,37 @@ const Monitor = require("../model/monitor");
  */
 const formatDuration = (ms) => {
     if (ms === 0) {
-        return "0";
+        return "0s";
     }
     if (ms < 1000) {
         return `${Math.floor(ms)}ms`;
     }
-    if (ms < 10000) {
-        return `${(ms / 1000).toFixed(2)}s`;
+
+    // Calculate total seconds
+    const totalSec = Math.floor(ms / 1000);
+
+    if (totalSec < 60) {
+        return `${totalSec}s`;
     }
 
-    const sec = Math.floor(ms / 1000);
-    if (sec < 60) {
-        return `${sec}s`;
-    }
-
-    const min = Math.floor(sec / 60);
-    const rmSec = sec % 60;
+    const min = Math.floor(totalSec / 60);
+    const sec = totalSec % 60; // Remainder seconds
 
     if (min < 60) {
-        if (rmSec === 0) {
-            return `${min} ${min === 1 ? "Min" : "Mins"}`;
+        if (sec === 0) {
+            return `${min}m`;
         }
-        return `${min} ${min === 1 ? "Min" : "Mins"} ${rmSec} ${rmSec === 1 ? "Sec" : "Secs"}`;
+        return `${min}m ${sec}s`;
     }
 
     const hrs = Math.floor(min / 60);
     const rmMin = min % 60;
 
-    if (rmMin === 0 && rmSec === 0) {
-        return `${hrs} ${hrs === 1 ? "Hr" : "Hrs"}`;
+    // For long durations
+    if (sec === 0) {
+        return `${hrs}h ${rmMin}m`;
     }
-
-    if (rmSec === 0) {
-        return `${hrs} ${hrs === 1 ? "Hr" : "Hrs"} ${rmMin} ${rmMin === 1 ? "Min" : "Mins"}`;
-    }
-
-    return `${hrs} ${hrs === 1 ? "Hr" : "Hrs"} ${rmMin} ${rmMin === 1 ? "Min" : "Mins"} ${rmSec} ${rmSec === 1 ? "Sec" : "Secs"}`;
+    return `${hrs}h ${rmMin}m ${sec}s`;
 };
 
 const formatLongDuration = (ms) => {
@@ -300,12 +295,29 @@ async function generateSingleMonitorStats(monitorID, startDate, endDate) {
     }
 
     if (currentDowntime) {
-        currentDowntime.endTime = endDateStr;
+        // Fix: If endDate is in the future (e.g. End of Week report), clamp ongoing downtime to NOW.
+        // This prevents showing future downtime (e.g. "91 Hrs") for an active incident.
+        const now = dayjs();
+        let effectiveEnd = endDate;
+        if (effectiveEnd.isAfter(now)) {
+            effectiveEnd = now;
+        }
+
+        currentDowntime.endTime = effectiveEnd.format("YYYY-MM-DD HH:mm:ss");
         currentDowntime.duration = dayjs(currentDowntime.endTime).diff(dayjs(currentDowntime.startTime));
+
+        if (currentDowntime.duration < 0) currentDowntime.duration = 0;
+
         downtimeEvents.push(currentDowntime);
     }
     if (currentMaintenance) {
-        maintenanceDurationMs += dayjs(endDateStr).diff(dayjs(currentMaintenance));
+        // Same clamp for maintenance
+        const now = dayjs();
+        let effectiveEnd = endDate;
+        if (effectiveEnd.isAfter(now)) {
+            effectiveEnd = now;
+        }
+        maintenanceDurationMs += effectiveEnd.diff(dayjs(currentMaintenance));
     }
 
     // Calculate Metrics
