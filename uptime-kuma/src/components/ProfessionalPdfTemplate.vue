@@ -152,7 +152,6 @@
                             <th style="width: 20%" class="font-slab">Time (Start / End)</th>
                             <th style="width: 15%" class="font-slab">Duration</th>
                             <th style="width: 30%" class="font-slab">Error / Reason</th>
-                            <th style="width: 35%" class="font-slab">Analysis & Recommendation</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -167,13 +166,28 @@
                             <td class="text-liquid-lava small font-monospace">
                                 {{ event.msg }}
                             </td>
-                            <td class="small text-obsidian-eclipse">
-                                <div v-if="event.recommendation" v-html="event.recommendation"></div>
-                                <div v-else class="text-muted fst-italic">Pending analysis...</div>
-                            </td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- 6. Grouped Analysis & Recommendation -->
+            <div v-if="reportItem.groupedAnalysis?.length > 0" class="px-4 mb-5">
+                 <h6 class="section-label mb-3 font-slab">ANALYSIS & RECOMMENDATION</h6>
+                 
+                 <div class="analysis-container bg-light rounded p-4 border">
+                    <div v-for="(analysis, idx) in reportItem.groupedAnalysis" :key="idx" class="analysis-item mb-4">
+                        <div class="d-flex align-items-center mb-2">
+                             <span class="badge badge-error me-2">Error</span>
+                             <span class="fw-bold text-obsidian-blue font-slab">{{ analysis.error }}</span>
+                        </div>
+                        <div class="response-content small text-taupe ps-3 border-start border-3 border-liquid-lava ms-2">
+                            <div v-html="analysis.advice"></div>
+                        </div>
+                        
+                        <hr v-if="idx < reportItem.groupedAnalysis.length - 1" class="my-4" style="opacity: 0.1">
+                    </div>
+                 </div>
             </div>
 
             <!-- Page Break after each monitor section (except last) -->

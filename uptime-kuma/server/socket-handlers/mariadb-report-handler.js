@@ -356,6 +356,11 @@ async function generateSingleMonitorStats(monitorID, startDate, endDate) {
         };
     });
 
+    const groupedAnalysis = Object.keys(adviceMap).map(errorMsg => ({
+        error: errorMsg,
+        advice: adviceMap[errorMsg]
+    }));
+
     return {
         id: monitorID,
         name: monitorName,
@@ -377,7 +382,8 @@ async function generateSingleMonitorStats(monitorID, startDate, endDate) {
             certInfo: certInfo
         },
         dailyStats,
-        downtimeEvents
+        downtimeEvents,
+        groupedAnalysis
     };
 }
 

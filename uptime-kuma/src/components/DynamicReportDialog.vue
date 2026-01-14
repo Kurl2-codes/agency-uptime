@@ -231,7 +231,6 @@
                                                 <th style="width: 150px;">{{ $t("To Time") }}</th>
                                                 <th style="width: 120px;">{{ $t("Duration") }}</th>
                                                 <th style="width: 25%;">{{ $t("Reason") }}</th>
-                                                <th>{{ $t("ANALYSIS & RECOMMENDATION") }}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -250,18 +249,28 @@
                                                 <td class="text-danger align-middle">
                                                     {{ event.msg }}
                                                 </td>
-                                                <td class="align-middle">
-                                                    <div v-if="event.recommendation === 'Fetching advice...'" class="text-muted fst-italic">
-                                                        <font-awesome-icon icon="spinner" spin /> {{ $t("Analyzing...") }}
-                                                    </div>
-                                                    <div v-else class="small">
-                                                        <font-awesome-icon icon="robot" class="text-primary me-1" />
-                                                        <span v-html="event.recommendation"></span>
-                                                    </div>
-                                                </td>
                                             </tr>
                                         </tbody>
                                     </table>
+                                </div>
+                            </div>
+
+                            <!-- Analysis and Recommendation (Grouped) -->
+                            <div v-if="reportItem.groupedAnalysis && reportItem.groupedAnalysis.length > 0" class="section mb-5">
+                                <h5 class="section-title text-primary">{{ $t("Analysis and Recommendation") }}</h5>
+                                <div class="card border-0 shadow-sm bg-light">
+                                    <div class="card-body">
+                                        <div v-for="(analysis, aIndex) in reportItem.groupedAnalysis" :key="aIndex" class="mb-4">
+                                            <h6 class="fw-bold text-danger mb-2">
+                                                <font-awesome-icon icon="exclamation-circle" class="me-2" />
+                                                {{ analysis.error }}
+                                            </h6>
+                                            <div class="ps-4 text-muted small">
+                                                <div v-html="analysis.advice"></div>
+                                            </div>
+                                            <hr v-if="aIndex < reportItem.groupedAnalysis.length - 1" class="my-3 text-muted opacity-25">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
