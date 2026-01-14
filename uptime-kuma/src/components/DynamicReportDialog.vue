@@ -87,7 +87,7 @@
                             <h2 v-if="reportData.isGroup" class="mb-5 text-obsidian-blue fw-bold font-slab text-uppercase letter-spacing-wide">
                     {{ reportData.groupName }}
                 </h2>
-                            <p v-if="reportData.isGroup" class="text-taupe small text-uppercase ls-wide mt-n4 mb-5">Agency Performance Report</p>
+                            <p v-if="reportData.isGroup" class="text-taupe small text-uppercase ls-wide mt-n4 mb-5">Agency Report</p>
                             
                             <small v-else class="text-muted">{{ $t("Report generated for Monitor") }} #{{ monitorId }}</small>
                         </div>
@@ -261,9 +261,16 @@
                                 <div class="card border-0 shadow-sm bg-light">
                                     <div class="card-body">
                                         <div v-for="(analysis, aIndex) in reportItem.groupedAnalysis" :key="aIndex" class="mb-4">
-                                            <h6 class="fw-bold text-danger mb-2">
+                                            <h6 class="fw-bold text-danger mb-2 d-flex align-items-center">
                                                 <font-awesome-icon icon="exclamation-circle" class="me-2" />
                                                 {{ analysis.error }}
+                                                
+                                                <button class="btn btn-sm btn-outline-secondary ms-auto" style="font-size: 0.7rem;" 
+                                                        @click="retryAnalysis(reportItem.id || monitorId, analysis)" 
+                                                        :disabled="analysis.loading">
+                                                    <font-awesome-icon :icon="analysis.loading ? 'spinner' : 'sync'" :spin="analysis.loading" class="me-1" />
+                                                    {{ analysis.loading ? $t("Retrying...") : $t("Retry Analysis") }}
+                                                </button>
                                             </h6>
                                             <div class="ps-4 text-muted small">
                                                 <div v-html="analysis.advice"></div>
@@ -509,6 +516,24 @@ export default defineComponent({
 
             // @ts-ignore
             html2pdf().set(opt).from(element).save();
+        },
+
+        retryAnalysis(monitorID, analysisItem) {
+            analysisItem.loading = true;
+            this.$root.getSocket().emit("retryAnalysis",
+                monitorID,
+                analysisItem.error,
+                analysisItem.duration || "unknown", // Sent from backend now
+                (res) => {
+                    analysisItem.loading = false;
+                    if (res.ok) {
+                        analysisItem.advice = res.advice;
+                        this.$root.toastSuccess("Analysis updated!");
+                    } else {
+                        this.$root.toastError(res.msg);
+                    }
+                }
+            );
         },
     },
 });

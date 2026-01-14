@@ -34,7 +34,7 @@
                             {{ reportData?.isGroup ? reportItem.name : 'Official Service Report' }}
                         </h5>
                         <p class="text-taupe small mb-0 font-inter">
-                            {{ reportData?.isGroup ? 'Agency Performance Report' : 'Generated on ' + currentDateTime }}
+                            {{ reportData?.isGroup ? 'Agency Report' : 'Generated on ' + currentDateTime }}
                         </p>
                     </div>
                     <div class="col-6 text-end">

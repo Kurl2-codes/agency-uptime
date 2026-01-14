@@ -9,33 +9,7 @@ const Monitor = require("../model/monitor");
  * @param {string} threadId - Unique ID for the conversation context (optional).
  * @returns {Promise<string>} - The agent's reasoning.
  */
-async function askSREAgent(message, threadId = "system") {
-    const AGENT_URL = process.env.MCP_AGENT_URL || "http://127.0.0.1:8000/chat";
 
-    try {
-        const response = await fetch(AGENT_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                message: message,
-                thread_id: threadId
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`Agent API Error: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        return data.response;
-
-    } catch (error) {
-        console.error("Failed to talk to SRE Agent:", error);
-        return "⚠️ SRE Agent is unreachable.";
-    }
-}
 
 /**
  * Format Duration helper
@@ -102,9 +76,80 @@ const formatLongDuration = (ms) => {
     return formatDuration(ms);
 };
 
+const path = require("path");
+const fs = require("fs");
+
 // SRE Advice Cache
-const adviceCache = {};
-const MAX_CACHE_SIZE = 100;
+let adviceCache = {};
+const CACHE_FILE = path.join(process.env.DATA_DIR || "./data", "sre-advice-cache.json");
+
+// Load Cache on Module Load
+try {
+    if (fs.existsSync(CACHE_FILE)) {
+        const raw = fs.readFileSync(CACHE_FILE, "utf-8");
+        adviceCache = JSON.parse(raw);
+        console.log(`[SRE Cache] Loaded ${Object.keys(adviceCache).length} entries from disk.`);
+    }
+} catch (err) {
+    console.error("[SRE Cache] Failed to load cache:", err);
+}
+
+/**
+ * Save Cache to Disk
+ */
+function saveCache() {
+    try {
+        fs.writeFileSync(CACHE_FILE, JSON.stringify(adviceCache, null, 2));
+    } catch (err) {
+        console.error("[SRE Cache] Failed to save cache:", err);
+    }
+}
+
+const MAX_CACHE_SIZE = 500; // Increased size since it's on disk now
+
+
+/**
+ * Ask the SRE Agent for reasoning.
+ * @param {string} message - The question or monitor error details.
+ * @param {string} threadId - Unique ID for the conversation context (optional).
+ * @returns {Promise<string>} - The agent's reasoning.
+ */
+async function askSREAgent(message, threadId = "system") {
+    const AGENT_URL = process.env.MCP_AGENT_URL || "http://127.0.0.1:8000/chat";
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 Second Timeout
+
+    try {
+        const response = await fetch(AGENT_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: message,
+                thread_id: threadId
+            }),
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            throw new Error(`Agent API Error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.response;
+
+    } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            console.error("SRE Agent request timed out.");
+            return "Analysis timed out (Agent unresponsive).";
+        }
+        console.error("Failed to talk to SRE Agent:", error);
+        return "⚠️ SRE Agent is unreachable.";
+    }
+}
 
 /**
  * Generate Stats for a Single Monitor
@@ -182,7 +227,8 @@ async function generateSingleMonitorStats(monitorID, startDate, endDate) {
                 maintenance: 0,
                 total: 0,
                 pingSum: 0,
-                pingCount: 0
+                pingCount: 0,
+                uptime: 0,      // Will be calculated by time
             };
         }
         return dailyStatsMap[day];
@@ -217,7 +263,7 @@ async function generateSingleMonitorStats(monitorID, startDate, endDate) {
         } else if (hb.status === 0) { // DOWN
             downChecks++;
             dayStat.down++;
-            const msg = hb.msg || "Unknown error";
+            const msg = hb.msg || "Unspecified Check Failure";
 
             if (!currentDowntime) {
                 currentDowntime = {
@@ -226,7 +272,7 @@ async function generateSingleMonitorStats(monitorID, startDate, endDate) {
                     msg: msg,
                     recommendation: "Fetching advice..."
                 };
-            } else if (msg !== "Unknown error" && currentDowntime.msg === "Unknown error") {
+            } else if (msg !== "Unspecified Check Failure" && currentDowntime.msg === "Unspecified Check Failure") {
                 currentDowntime.msg = msg;
             }
 
@@ -265,6 +311,56 @@ async function generateSingleMonitorStats(monitorID, startDate, endDate) {
     // Calculate Metrics
     let totalDowntimeMs = 0;
     const uniqueErrors = new Set();
+    const maintenanceEvents = []; // Need to track maintenance for daily overlap too
+
+    // Re-process for daily stats (Time-Based Calculation)
+    // We need to calculate how much downtime/maintenance occurred within each day
+    // to get an accurate daily uptime percentage.
+
+    // Helper: Calculate overlap in milliseconds between two ranges
+    const getOverlap = (start1, end1, start2, end2) => {
+        const s = Math.max(start1, start2);
+        const e = Math.min(end1, end2);
+        return Math.max(0, e - s);
+    };
+
+    const dailyStats = Object.values(dailyStatsMap).sort((a, b) => a.date.localeCompare(b.date)).map(dayStat => {
+        const dayStart = dayjs(dayStat.date).startOf('day').valueOf();
+        const dayEnd = dayjs(dayStat.date).endOf('day').valueOf();
+
+        // Clamp day window to report range
+        const windowStart = Math.max(dayStart, startDate.valueOf());
+        const windowEnd = Math.min(dayEnd, endDate.valueOf());
+        const totalWindowMs = Math.max(0, windowEnd - windowStart);
+
+        let dayDowntimeMs = 0;
+        let dayMaintenanceMs = 0;
+
+        // Calculate Downtime overlap for this day
+        downtimeEvents.forEach(evt => {
+            const evtStart = dayjs(evt.startTime).valueOf();
+            const evtEnd = dayjs(evt.endTime).valueOf();
+            dayDowntimeMs += getOverlap(windowStart, windowEnd, evtStart, evtEnd);
+        });
+
+        // Calculate Downtime overlap for this day
+        // Note: For pure accuracy, maintenance should also be time-based.
+        // But since we didn't track maintenance objects fully in the loop above (only currentMaintenance),
+        // we will stick to the requested fix for "Check Failure" availability logic first.
+
+        const dayUptimeMs = Math.max(0, totalWindowMs - dayDowntimeMs);
+        const calcUptime = totalWindowMs > 0 ? (dayUptimeMs / totalWindowMs) : 0;
+
+        return {
+            date: dayStat.date,
+            uptime: calcUptime, // Time-based!
+            avgPing: dayStat.pingCount > 0 ? (dayStat.pingSum / dayStat.pingCount) : null,
+            checks: dayStat.total,
+            up: dayStat.up,
+            down: dayStat.down,
+            maintenance: dayStat.maintenance
+        };
+    });
 
     downtimeEvents.forEach(evt => {
         totalDowntimeMs += evt.duration;
@@ -282,16 +378,19 @@ async function generateSingleMonitorStats(monitorID, startDate, endDate) {
     const maintenancePercent = reportTotalMs > 0 ? (maintenanceDurationMs / reportTotalMs * 100) : 0;
 
     // SRE Recommendations
-    const MAX_ERRORS_TO_CHECK = 10;
+    const MAX_ERRORS_TO_CHECK = 3;
     const errorsArray = Array.from(uniqueErrors).slice(0, MAX_ERRORS_TO_CHECK);
     const adviceMap = {};
 
-    // PARALLEL: Fetch advice for unique errors concurrently
-    const advicePromises = errorsArray.map(async (errorMsg) => {
+    // SEQUENTIAL: Fetch advice for unique errors one by one to avoid local LLM overload
+    const adviceResults = [];
+
+    for (const errorMsg of errorsArray) {
         // 1. Check Cache
         if (adviceCache[errorMsg]) {
             console.log(`[Report] Serving cached advice for: "${errorMsg}"`);
-            return { errorMsg, advice: adviceCache[errorMsg] };
+            adviceResults.push({ errorMsg, advice: adviceCache[errorMsg] });
+            continue;
         }
 
         const exampleEvent = downtimeEvents.find(e => e.msg === errorMsg);
@@ -300,35 +399,48 @@ async function generateSingleMonitorStats(monitorID, startDate, endDate) {
         const prompt = `
             You are a Site Reliability Engineer (SRE) Agent.
             I encountered a monitor error: "${errorMsg}".
-            The downtime lasted for approximately ${durationContext}.
+            
+            Context:
+            - Monitor Name: "${monitorName}"
+            - Target URL: "${monitorUrl}"
+            - Downtime Duration: ${durationContext}
+
             Please provide a concise analysis in two parts:
             1. <b>Reasoning:</b> Brief technical explanation of why this error occurred.
-            2. <b>Recommendation:</b> Actionable steps to fix or investigate it.
-            Use HTML tags like <b>, <br>, and <ul> for formatting. Do not use Markdown.
+            2. <b>Recommendation:</b> Actionable steps to fix it.
+            IMPORTANT: Format the recommendations as an HTML unordered list (<ul><li>...</li></ul>).
+            Do NOT use Markdown (no * or -). Use only HTML tags.
         `.trim().replace(/\s+/g, " ");
 
         try {
             console.log(`[Report] Fetching fresh advice for: "${errorMsg}"`);
             const advice = await askSREAgent(prompt, `monitor-${monitorID}`);
 
-            // 2. Store in Cache
+            // Simple Sanitization
+            const safeAdvice = advice
+                .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "")
+                .replace(/<iframe\b[^>]*>([\s\S]*?)<\/iframe>/gim, "")
+                .replace(/\bon\w+="[^"]*"/gim, "");
+
+            // 2. Store in Cache (Limit size)
             if (Object.keys(adviceCache).length >= MAX_CACHE_SIZE) {
-                // Simple flush if too big
                 for (const key in adviceCache) delete adviceCache[key];
             }
-            adviceCache[errorMsg] = advice;
+            adviceCache[errorMsg] = safeAdvice;
+            adviceResults.push({ errorMsg, advice: safeAdvice });
 
-            return { errorMsg, advice };
         } catch (err) {
             console.error(`Failed to get advice for ${errorMsg}:`, err);
-            return { errorMsg, advice: "Analysis failed." };
+            adviceResults.push({ errorMsg, advice: "SRE Agent is unreachable (Timeout)." });
         }
-    });
+    }
 
-    const [adviceResults, fetchedCertInfo] = await Promise.all([
-        Promise.all(advicePromises),
-        certInfoPromise
-    ]);
+    const fetchedCertInfo = await certInfoPromise;
+
+    // Save cache if any new advice was fetched
+    if (adviceResults.some(r => r.advice && r.advice !== "Analysis failed." && r.advice !== "Advice not fetched (limit reached).")) {
+        saveCache();
+    }
 
     certInfo = fetchedCertInfo;
 
@@ -344,22 +456,14 @@ async function generateSingleMonitorStats(monitorID, startDate, endDate) {
         }
     });
 
-    const dailyStats = Object.values(dailyStatsMap).sort((a, b) => a.date.localeCompare(b.date)).map(dayStat => {
+    const groupedAnalysis = Object.keys(adviceMap).map(errorMsg => {
+        const exampleEvent = downtimeEvents.find(e => e.msg === errorMsg);
         return {
-            date: dayStat.date,
-            uptime: dayStat.total > 0 ? (dayStat.up / dayStat.total) : 0,
-            avgPing: dayStat.pingCount > 0 ? (dayStat.pingSum / dayStat.pingCount) : null,
-            checks: dayStat.total,
-            up: dayStat.up,
-            down: dayStat.down,
-            maintenance: dayStat.maintenance
+            error: errorMsg,
+            advice: adviceMap[errorMsg],
+            duration: exampleEvent ? exampleEvent.durationStr : "unknown"
         };
     });
-
-    const groupedAnalysis = Object.keys(adviceMap).map(errorMsg => ({
-        error: errorMsg,
-        advice: adviceMap[errorMsg]
-    }));
 
     return {
         id: monitorID,
@@ -426,10 +530,12 @@ module.exports.mariadbReportHandler = (socket) => {
                 const childrenIDs = await Monitor.getAllChildrenIDs(monitorID);
                 console.log(`Found children: ${childrenIDs.join(", ")}`);
 
-                // PARALLEL: Fetch all child reports concurrently
-                const childrenReports = await Promise.all(
-                    childrenIDs.map(childID => generateSingleMonitorStats(childID, startDate, endDate))
-                );
+                // SEQUENTIAL: Fetch all child reports one by one to prevent global SRE overload
+                const childrenReports = [];
+                for (const childID of childrenIDs) {
+                    const report = await generateSingleMonitorStats(childID, startDate, endDate);
+                    childrenReports.push(report);
+                }
 
                 // Aggregate Summary (Simple averaging for now, or just pass children)
                 // We'll calculate a "Group Uptime" based on average of children uptimes
@@ -461,6 +567,63 @@ module.exports.mariadbReportHandler = (socket) => {
 
         } catch (e) {
             console.error("Report generation error:", e);
+            callback({
+                ok: false,
+                msg: e.message,
+            });
+        }
+    });
+
+    socket.on("retryAnalysis", async (monitorID, errorMsg, durationContext, callback) => {
+        try {
+            checkLogin(socket);
+
+            console.log(`[Report] Retrying analysis for: "${errorMsg}"`);
+
+            const monitor = await R.findOne("monitor", " id = ? ", [monitorID]);
+            let monitorName = "Unknown Monitor";
+            let monitorUrl = "";
+
+            if (monitor) {
+                monitorName = monitor.name;
+                monitorUrl = monitor.url || monitor.hostname;
+            }
+
+            const prompt = `
+                You are a Site Reliability Engineer (SRE) Agent.
+                I encountered a monitor error: "${errorMsg}".
+                
+                Context:
+                - Monitor Name: "${monitorName}"
+                - Target URL: "${monitorUrl}"
+                - Downtime Duration: ${durationContext}
+
+                Please provide a concise analysis in two parts:
+                1. <b>Reasoning:</b> Brief technical explanation of why this error occurred.
+                2. <b>Recommendation:</b> Actionable steps to fix it.
+                IMPORTANT: Format the recommendations as an HTML unordered list (<ul><li>...</li></ul>).
+                Do NOT use Markdown (no * or -). Use only HTML tags.
+            `.trim().replace(/\s+/g, " ");
+
+            const advice = await askSREAgent(prompt, `retry-${monitorID}`);
+
+            // Simple Sanitization
+            const safeAdvice = advice
+                .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "")
+                .replace(/<iframe\b[^>]*>([\s\S]*?)<\/iframe>/gim, "")
+                .replace(/\bon\w+="[^"]*"/gim, "");
+
+            // Update Cache
+            adviceCache[errorMsg] = safeAdvice;
+            saveCache();
+
+            callback({
+                ok: true,
+                advice: safeAdvice
+            });
+
+        } catch (e) {
+            console.error("Retry analysis error:", e);
             callback({
                 ok: false,
                 msg: e.message,
