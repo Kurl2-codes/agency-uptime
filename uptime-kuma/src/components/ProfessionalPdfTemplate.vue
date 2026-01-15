@@ -203,6 +203,13 @@
 
 <script lang="ts">
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+// @ts-ignore
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 // @ts-ignore
 import logoImg from "../assets/image.png";
 import DailyAvailabilityChart from "./DailyAvailabilityChart.vue";
@@ -226,7 +233,7 @@ export default {
     },
     computed: {
         currentDateTime() {
-            return dayjs().format("MMMM D, YYYY HH:mm");
+            return dayjs().tz("Asia/Manila").format("MMMM D, YYYY HH:mm");
         },
         reportsToList() {
             if (!this.reportData) {
@@ -257,13 +264,13 @@ export default {
              return url.replace(/\s*\.\s*/g, '.').trim();
         },
         formatDate(dateStr: string) {
-            return dayjs(dateStr).format("MMMM D, YYYY");
+            return dayjs.utc(dateStr).tz("Asia/Manila").format("MMMM D, YYYY");
         },
         formatDateShort(dateStr: string) {
-            return dayjs(dateStr).format("MMM D");
+            return dayjs.utc(dateStr).tz("Asia/Manila").format("MMM D");
         },
         formatTime(dateStr: string) {
-            return dayjs(dateStr).format("HH:mm:ss");
+            return dayjs.utc(dateStr).tz("Asia/Manila").format("HH:mm:ss");
         },
         getUptimeColorClass(uptime: number) {
             // Using branding colors implicitly or standard class mappings with extended overrides

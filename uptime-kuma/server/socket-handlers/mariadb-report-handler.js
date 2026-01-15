@@ -375,6 +375,19 @@ async function generateSingleMonitorStats(monitorID, startDate, endDate) {
     });
 
     downtimeEvents.forEach(evt => {
+        // Normalize times to strictly ISO UTC strings to ensure frontend timezone consistency
+        // UPDATE: Force conversion to Asia/Manila strings to fix 8-hour offset issue in reports
+        console.log(`[Report Debug] Raw StartTime: ${evt.startTime} (${typeof evt.startTime})`);
+
+        // Assume date from DB is UTC. .utc() parses it as UTC.
+        // We strictly format as UTC ISO string so Frontend can convert to Local Time.
+        evt.startTime = dayjs.utc(evt.startTime).format("YYYY-MM-DD HH:mm:ss");
+        console.log(`[Report Debug] Converted StartTime (UTC): ${evt.startTime}`);
+
+        if (evt.endTime) {
+            evt.endTime = dayjs.utc(evt.endTime).format("YYYY-MM-DD HH:mm:ss");
+        }
+
         totalDowntimeMs += evt.duration;
         uniqueErrors.add(evt.msg);
         evt.durationStr = formatDuration(evt.duration);

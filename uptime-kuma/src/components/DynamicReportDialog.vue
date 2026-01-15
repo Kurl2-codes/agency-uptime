@@ -374,10 +374,15 @@
 import { defineComponent } from "vue";
 import { Modal } from "bootstrap";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import logoImg from "../assets/image.png";
 import ProfessionalPdfTemplate from "./ProfessionalPdfTemplate.vue";
 import DailyAvailabilityChart from "./DailyAvailabilityChart.vue";
 import { jsPDF } from "jspdf";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export default defineComponent({
     components: {
@@ -459,14 +464,14 @@ export default defineComponent({
             );
         },
         formatDateTime(timeStr) {
-            return dayjs(timeStr).format("MMMM D, YYYY HH:mm:ss");
+            return dayjs.utc(timeStr).tz("Asia/Manila").format("MMMM D, YYYY HH:mm:ss");
         },
 
         formatTime(timeStr) {
-            return dayjs(timeStr).format("HH:mm:ss");
+            return dayjs.utc(timeStr).tz("Asia/Manila").format("HH:mm:ss");
         },
         formatDate(dateStr) {
-            return dayjs(dateStr).format("MMMM D, YYYY");
+            return dayjs.utc(dateStr).tz("Asia/Manila").format("MMMM D, YYYY");
         },
         // @ts-ignore
         getUptimeColor(uptime: number) {
