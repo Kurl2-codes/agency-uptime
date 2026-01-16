@@ -32,6 +32,7 @@ const Security = () => import("./components/settings/Security.vue");
 import Proxies from "./components/settings/Proxies.vue";
 import About from "./components/settings/About.vue";
 import RemoteBrowsers from "./components/settings/RemoteBrowsers.vue";
+import ShiftTime from "./components/settings/ShiftTime.vue";
 
 const routes = [
     {
@@ -135,6 +136,10 @@ const routes = [
                             {
                                 path: "about",
                                 component: About,
+                            },
+                            {
+                                path: "shift-time",
+                                component: ShiftTime,
                             },
                         ]
                     },

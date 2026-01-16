@@ -93,6 +93,12 @@
             <div class="shadow-box table-shadow-box" style="overflow-x: hidden;">
                 <div class="mb-3 text-end">
                     <button
+                        class="btn btn-sm btn-outline-primary me-2"
+                        @click="$refs.shiftReportDialog.show()"
+                    >
+                        <font-awesome-icon icon="clipboard" /> {{ $t("Shift Report") }}
+                    </button>
+                    <button
                         class="btn btn-sm btn-outline-danger"
                         :disabled="clearingAllEvents"
                         @click="clearAllEventsDialog"
@@ -136,15 +142,11 @@
             </div>
         </div>
     </transition>
-    <Confirm
-        ref="confirmClearEvents"
-        btn-style="btn-danger"
-        :yes-text="$t('Yes')"
-        :no-text="$t('No')"
-        @yes="clearAllEvents"
-    >
-        {{ $t("clearAllEventsMsg") }}
+    <Confirm ref="confirmClearAll" btn-style="btn-danger" :yes-text="$t('Yes')" :no-text="$t('No')" @yes="clearAllEvents">
+        {{ $t("clearAllEventsConfirmation") }}
     </Confirm>
+
+    <ShiftReportDialog ref="shiftReportDialog" />
     <router-view ref="child" />
 </template>
 
@@ -154,6 +156,8 @@ import Datetime from "../components/Datetime.vue";
 import Pagination from "v-pagination-3";
 import Confirm from "../components/Confirm.vue";
 import { timeDurationFormatter } from "../util-frontend";
+import StatusList from "../components/StatusList.vue";
+import ShiftReportDialog from "../components/ShiftReportDialog.vue";
 
 export default {
     components: {
@@ -161,6 +165,8 @@ export default {
         Status,
         Pagination,
         Confirm,
+        StatusList,
+        ShiftReportDialog,
     },
     props: {
         calculatedHeight: {

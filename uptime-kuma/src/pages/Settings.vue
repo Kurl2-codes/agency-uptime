@@ -116,6 +116,9 @@ export default {
                 proxies: {
                     title: this.$t("Proxies"),
                 },
+                "shift-time": {
+                    title: this.$t("Shift Time"),
+                },
                 about: {
                     title: this.$t("About"),
                 },

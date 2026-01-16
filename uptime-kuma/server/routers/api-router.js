@@ -28,7 +28,7 @@ let io = server.io;
 router.get("/api/entry-page", async (request, response) => {
     allowDevAllOrigin(response);
 
-    let result = { };
+    let result = {};
     let hostname = request.hostname;
     if ((await setting("trustProxy")) && request.headers["x-forwarded-host"]) {
         hostname = request.headers["x-forwarded-host"];
@@ -56,7 +56,7 @@ router.all("/api/push/:pushToken", async (request, response) => {
             pushToken
         ]);
 
-        if (! monitor) {
+        if (!monitor) {
             throw new Error("Monitor not found or not active.");
         }
 
@@ -164,7 +164,7 @@ router.get("/api/badge/:id/status", cache("5 minutes"), async (request, response
                 AND monitor_group.monitor_id = ?
                 AND public = 1
             `,
-        [ requestedMonitorId ]
+            [requestedMonitorId]
         );
 
         const badgeValues = { style };
@@ -247,7 +247,7 @@ router.get("/api/badge/:id/uptime/:duration?", cache("5 minutes"), async (reques
                 AND monitor_group.monitor_id = ?
                 AND public = 1
             `,
-        [ requestedMonitorId ]
+            [requestedMonitorId]
         );
 
         const badgeValues = { style };
@@ -272,7 +272,7 @@ router.get("/api/badge/:id/uptime/:duration?", cache("5 minutes"), async (reques
                 labelPrefix,
                 label ?? `Uptime (${requestedDuration.slice(0, -1)}${labelSuffix})`,
             ]);
-            badgeValues.message = filterAndJoin([ prefix, cleanUptime, suffix ]);
+            badgeValues.message = filterAndJoin([prefix, cleanUptime, suffix]);
         }
 
         // build the SVG based on given values
@@ -330,8 +330,8 @@ router.get("/api/badge/:id/ping/:duration?", cache("5 minutes"), async (request,
             // use a given, custom labelColor or use the default badge label color (defined by badge-maker)
             badgeValues.labelColor = labelColor ?? "";
             // build a lable string. If a custom label is given, override the default one (requestedDuration)
-            badgeValues.label = filterAndJoin([ labelPrefix, label ?? `Avg. Ping (${requestedDuration.slice(0, -1)}${labelSuffix})` ]);
-            badgeValues.message = filterAndJoin([ prefix, avgPing, suffix ]);
+            badgeValues.label = filterAndJoin([labelPrefix, label ?? `Avg. Ping (${requestedDuration.slice(0, -1)}${labelSuffix})`]);
+            badgeValues.message = filterAndJoin([prefix, avgPing, suffix]);
         }
 
         // build the SVG based on given values
@@ -381,7 +381,7 @@ router.get("/api/badge/:id/avg-response/:duration?", cache("5 minutes"), async (
             AND public = 1
             AND heartbeat.monitor_id = ?
             `,
-        [ -requestedDuration, requestedMonitorId ]
+            [-requestedDuration, requestedMonitorId]
         ));
 
         const badgeValues = { style };
@@ -403,7 +403,7 @@ router.get("/api/badge/:id/avg-response/:duration?", cache("5 minutes"), async (
                 label ?? `Avg. Response (${requestedDuration}h)`,
                 labelSuffix,
             ]);
-            badgeValues.message = filterAndJoin([ prefix, avgPing, suffix ]);
+            badgeValues.message = filterAndJoin([prefix, avgPing, suffix]);
         }
 
         // build the SVG based on given values
@@ -448,7 +448,7 @@ router.get("/api/badge/:id/cert-exp", cache("5 minutes"), async (request, respon
             AND monitor_group.monitor_id = ?
             AND public = 1
             `,
-        [ requestedMonitorId ]
+            [requestedMonitorId]
         );
 
         const badgeValues = { style };
@@ -492,7 +492,7 @@ router.get("/api/badge/:id/cert-exp", cache("5 minutes"), async (request, respon
                         label ?? "Cert Exp.",
                         labelSuffix,
                     ]);
-                    badgeValues.message = filterAndJoin([ prefix, date ? tlsInfo.certInfo.validTo : daysRemaining, suffix ]);
+                    badgeValues.message = filterAndJoin([prefix, date ? tlsInfo.certInfo.validTo : daysRemaining, suffix]);
                 }
             }
         }
@@ -533,7 +533,7 @@ router.get("/api/badge/:id/response", cache("5 minutes"), async (request, respon
             AND monitor_group.monitor_id = ?
             AND public = 1
             `,
-        [ requestedMonitorId ]
+            [requestedMonitorId]
         );
 
         const badgeValues = { style };
@@ -565,7 +565,7 @@ router.get("/api/badge/:id/response", cache("5 minutes"), async (request, respon
                     label ?? "Response",
                     labelSuffix,
                 ]);
-                badgeValues.message = filterAndJoin([ prefix, ping, suffix ]);
+                badgeValues.message = filterAndJoin([prefix, ping, suffix]);
             }
         }
 
@@ -632,5 +632,100 @@ function determineStatus(status, previousHeartbeat, maxretries, isUpsideDown, be
         }
     }
 }
+
+// Import askSREAgent
+const { askSREAgent } = require("../modules/sre-agent-client");
+
+router.get("/api/reports/shift-summary", cache("5 minutes"), async (request, response) => {
+    allowAllOrigin(response);
+
+    try {
+        let { startTime, endTime } = request.query;
+
+        // If not provided in query, try to get from settings
+        if (!startTime || !endTime) {
+            startTime = await setting("shiftStart");
+            endTime = await setting("shiftEnd");
+        }
+
+        // Default to last 24h if still no time is provided
+        let start = dayjs().subtract(24, "hour");
+        let end = dayjs();
+
+        // Parse custom time (e.g. "07:00", "15:30") relative to today
+        if (startTime && endTime) {
+            const today = dayjs().format("YYYY-MM-DD");
+            start = dayjs(`${today} ${startTime}`, "YYYY-MM-DD HH:mm");
+            end = dayjs(`${today} ${endTime}`, "YYYY-MM-DD HH:mm");
+
+            // Handle overnight shifts (e.g. 10pm to 6am)
+            if (end.isBefore(start)) {
+                end = end.add(1, "day");
+            }
+        }
+
+        const startStr = R.isoDateTimeMillis(start);
+        const endStr = R.isoDateTimeMillis(end);
+
+        // Fetch all incidents (DOWN status) in the window
+        const incidents = await R.getAll(`
+            SELECT m.name, h.time, h.msg, h.ping
+            FROM heartbeat h
+            JOIN monitor m ON h.monitor_id = m.id
+            WHERE h.status = 0 
+            AND h.time BETWEEN ? AND ?
+            ORDER BY h.time ASC
+        `, [startStr, endStr]);
+
+        // Fetch maintenance windows
+        const maintenances = await R.getAll(`
+            SELECT m.title, m.description, m.start_date, m.end_date
+            FROM maintenance m
+            WHERE (m.start_date BETWEEN ? AND ?) OR (m.end_date BETWEEN ? AND ?)
+        `, [startStr, endStr, startStr, endStr]);
+
+        if (incidents.length === 0 && maintenances.length === 0) {
+            return response.json({
+                summary: "No incidents or maintenance windows occurred during this shift. All systems operational.",
+                incident_count: 0,
+                critical_count: 0
+            });
+        }
+
+        // Prepare Prompt for SRE Agent
+        const prompt = `
+        You are an Intelligent Site Reliability Engineer (SRE). 
+        Analyze the following incident log for the shift from ${start.format("HH:mm")} to ${end.format("HH:mm")}.
+        
+        **Incidents:**
+        ${JSON.stringify(incidents, null, 2)}
+
+        **Maintenance Windows:**
+        ${JSON.stringify(maintenances, null, 2)}
+
+        **Instructions:**
+        1. Write a concise, professional executive summary (1 paragraph).
+        2. Identify patterns (e.g. flickering, specific host failure, maintenance overlap).
+        3. Distinguish between expected maintenance and actual outages.
+        4. Return the summary in plain text.
+        `;
+
+        const summary = await askSREAgent(prompt, "shift-summary");
+
+        response.json({
+            summary: summary,
+            incident_count: incidents.length,
+            critical_count: incidents.length, // Logic to differentiate critical/warning can be added later
+            period: {
+                start: startStr,
+                end: endStr
+            }
+        });
+
+    } catch (e) {
+        log.error("api", e);
+        sendHttpError(response, e.message);
+    }
+});
 
 module.exports = router;
