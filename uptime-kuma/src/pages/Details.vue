@@ -324,6 +324,43 @@
                 </div>
             </transition>
 
+            <!-- Global Latency Box (Hidden per user request until instant) -->
+            <div class="shadow-box big-padding text-center" v-if="false">
+                <div class="row">
+                    <div class="col-12">
+                        <h4>Global Latency (Multi-Regional)</h4>
+                        <p class="text-muted">Verify connectivity from multiple geographic regions.</p>
+                        
+                        <div v-if="latencyLoading" class="my-3">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <div class="mt-2">Connecting to SRE Agent...</div>
+                        </div>
+
+                        <div v-if="latencyResult" class="my-3">
+                            <div class="d-flex justify-content-center gap-4 flex-wrap">
+                                <div v-for="(val, region) in latencyResult" :key="region" class="card p-3 shadow-sm" style="min-width: 150px;">
+                                    <div class="fw-bold">{{ region }}</div>
+                                    <div class="h4 mt-2" :class="{'text-success': String(val).includes('ms'), 'text-danger': !String(val).includes('ms')}">
+                                        {{ val }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Source Verification Link -->
+                            <div v-if="latencyResult['Report Link'] && latencyResult['Report Link'].startsWith('http')" class="mt-2">
+                                <a :href="latencyResult['Report Link']" target="_blank" class="text-secondary small text-decoration-none">
+                                    <font-awesome-icon icon="external-link-alt" /> View Real-Time Source Report
+                                </a>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-outline-primary mt-3" @click="checkGlobalLatency" :disabled="latencyLoading">
+                            <font-awesome-icon icon="globe" /> Check Global Latency
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Ping Chart -->
             <div
                 v-if="showPingChartBox"
@@ -563,6 +600,8 @@ export default {
                 code: "",
             },
             deleteChildrenMonitors: false,
+            latencyLoading: false,
+            latencyResult: null,
         };
     },
     computed: {
@@ -704,6 +743,13 @@ export default {
 
     mounted() {
         this.getImportantHeartbeatListLength();
+
+        // Auto-Check Global Latency on mount (if URL available)
+        setTimeout(() => {
+             if (this.monitor && this.monitor.url && this.monitor.url.startsWith("http")) {
+                 this.checkGlobalLatency();
+             }
+        }, 1000);
 
         this.$root.emitter.on(
             "newImportantHeartbeat",
@@ -990,6 +1036,32 @@ export default {
 
         secondsToHumanReadableFormat(seconds) {
             return timeDurationFormatter.secondsToHumanReadableFormat(seconds);
+        },
+
+        /**
+         * Check Global Latency via SRE Agent
+         */
+        checkGlobalLatency() {
+            this.latencyLoading = true;
+            this.latencyResult = null;
+            
+            // Get URL from monitor
+            let checkUrl = this.monitor.url || this.monitor.hostname;
+            
+            if (!checkUrl) {
+                this.$root.toastError("No URL/Hostname to check.");
+                this.latencyLoading = false;
+                return;
+            }
+
+            this.$root.getSocket().emit("checkGlobalLatency", checkUrl, (res) => {
+                this.latencyLoading = false;
+                if (res.ok) {
+                    this.latencyResult = res.data;
+                } else {
+                    this.$root.toastError(res.msg);
+                }
+            });
         },
     },
 };

@@ -63,4 +63,14 @@ async def create_langchain_tools(session: ClientSession):
     )
     lc_tools.append(stats_tool)
 
+    # 5. Add Global Latency Tool
+    from ..tools.multi_region import check_global_latency
+    latency_tool = StructuredTool.from_function(
+        func=None,
+        coroutine=check_global_latency,
+        name="checkGlobalLatency",
+        description="Check latency of a URL from global regions (PH, NZ, AU, US, EU, BR). input: url (string). Returns JSON with regional latencies."
+    )
+    lc_tools.append(latency_tool)
+
     return lc_tools

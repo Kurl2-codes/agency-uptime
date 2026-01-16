@@ -655,4 +655,40 @@ module.exports.mariadbReportHandler = (socket) => {
             });
         }
     });
+
+    socket.on("checkGlobalLatency", async (url, callback) => {
+        try {
+            checkLogin(socket);
+            console.log(`[Global Latency] Checking for: ${url}`);
+
+            // Try to get instant cache result
+            const globalLatencyManager = require("../modules/global-latency-manager");
+            const cached = globalLatencyManager.getCachedResult(url);
+
+            if (cached) {
+                console.log(`[Global Latency] Returned CACHED result for ${url}`);
+                callback({
+                    ok: true,
+                    data: cached
+                });
+            } else {
+                console.log(`[Global Latency] CACHE MISS for ${url}. Returning pending & trigger refresh.`);
+                // Trigger background refresh (fire and forget)
+                globalLatencyManager.triggerRefresh(url);
+
+                // Return "Pending" status so UI doesn't block
+                callback({
+                    ok: true,
+                    data: { "Status": "Initial Check Pending... Result will appear in ~30s." }
+                });
+            }
+
+        } catch (e) {
+            console.error("Global latency check error:", e);
+            callback({
+                ok: false,
+                msg: e.message
+            });
+        }
+    });
 };

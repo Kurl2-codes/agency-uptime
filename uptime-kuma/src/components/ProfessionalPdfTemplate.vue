@@ -139,56 +139,69 @@
                 </table>
             </div>
 
-            <!-- 5. Downtime & Analysis Log -->
-            <div v-if="reportItem.downtimeEvents?.length > 0" class="px-4 mb-5 pt-4 mt-3">
-                <h6 class="section-label mb-3 font-slab">INCIDENT ANALYSIS LOG</h6>
-                <table class="table custom-table font-inter">
-                    <thead>
-                        <tr>
-                            <th style="width: 20%" class="font-slab">Time (Start / End)</th>
-                            <th style="width: 15%" class="font-slab">Duration</th>
-                            <th style="width: 30%" class="font-slab">Error / Reason</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="(event, eIndex) in reportItem.downtimeEvents" :key="eIndex" class="avoid-break">
-                            <td>
-                                <div class="fw-bold text-obsidian-blue">{{ formatDateShort(event.startTime) }}</div>
-                                <div class="small text-taupe">{{ formatTime(event.startTime) }} - {{ event.endTime ? formatTime(event.endTime) : 'NOW' }}</div>
-                            </td>
-                            <td>
-                                <span class="badge border text-taupe">{{ event.durationStr }}</span>
-                            </td>
-                            <td class="text-liquid-lava small font-monospace wrap-text">
-                                {{ event.msg }}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- 6. Grouped Analysis & Recommendation -->
-            <div v-if="reportItem.groupedAnalysis?.length > 0" class="px-4 mb-5">
-                 <h6 class="section-label mb-3 font-slab">ANALYSIS & RECOMMENDATION</h6>
-                 
-                 <div class="analysis-container bg-light rounded p-4 border">
-                    <div v-for="(analysis, idx) in reportItem.groupedAnalysis" :key="idx" class="analysis-item mb-4 avoid-break">
-                        <div class="d-flex align-items-center mb-2">
-                             <span class="badge badge-error me-2">Error</span>
-                             <span class="fw-bold text-obsidian-blue font-slab wrap-text">{{ analysis.error }}</span>
+            <div class="px-4 mb-5 pt-4 mt-3">
+                <div class="row">
+                    <!-- LEFT COL: Incident Log -->
+                    <div class="col-6 pe-4">
+                        <h6 class="section-label mb-3 font-slab">INCIDENT ANALYSIS LOG</h6>
+                        <div v-if="reportItem.downtimeEvents?.length > 0">
+                            <table class="table custom-table font-inter">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 25%" class="font-slab">Time</th>
+                                        <th style="width: 20%" class="font-slab">Duration</th>
+                                        <th style="width: 55%" class="font-slab">Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(event, eIndex) in reportItem.downtimeEvents" :key="eIndex" class="avoid-break">
+                                        <td>
+                                            <div class="fw-bold text-obsidian-blue">{{ formatDateShort(event.startTime) }}</div>
+                                            <div class="small text-taupe">{{ formatTime(event.startTime) }}</div>
+                                        </td>
+                                        <td>
+                                            <span class="badge border text-taupe">{{ event.durationStr }}</span>
+                                        </td>
+                                        <td class="text-liquid-lava small font-monospace wrap-text">
+                                            {{ event.msg }}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
-                        <div class="response-content small text-taupe ps-3 border-start border-3 border-liquid-lava ms-2 wrap-text">
-                            <!-- Sanitized Advice to remove emoji artifacts -->
-                            <div v-html="sanitizeAdvice(analysis.advice)"></div>
+                        <div v-else class="text-center p-4 border rounded bg-light text-taupe small font-inter">
+                            <i class="fas fa-check-circle text-success mb-2 display-6"></i><br>
+                            No incidents recorded during this period.
                         </div>
-                        
-                        <hr v-if="idx < reportItem.groupedAnalysis.length - 1" class="my-4" style="opacity: 0.1">
                     </div>
-                 </div>
+
+                    <!-- RIGHT COL: Analysis & Recommendation -->
+                    <div class="col-6 ps-4 border-start">
+                         <h6 class="section-label mb-3 font-slab">ANALYSIS & RECOMMENDATION</h6>
+                         
+                         <div v-if="reportItem.groupedAnalysis?.length > 0" class="analysis-container">
+                            <div v-for="(analysis, idx) in reportItem.groupedAnalysis" :key="idx" class="analysis-item mb-4 avoid-break">
+                                <div class="d-flex align-items-center mb-2">
+                                     <span class="badge badge-error me-2">Issue</span>
+                                     <span class="fw-bold text-obsidian-blue font-slab wrap-text small">{{ analysis.error }}</span>
+                                </div>
+                                <div class="response-content text-taupe ps-3 border-start border-3 border-liquid-lava ms-2 wrap-text" style="font-size: 10px; line-height: 1.3;">
+                                    <div v-html="sanitizeAdvice(analysis.advice)"></div>
+                                </div>
+                                
+                                <hr v-if="idx < reportItem.groupedAnalysis.length - 1" class="my-4" style="opacity: 0.1">
+                            </div>
+                         </div>
+                         <div v-else class="text-center p-4 border rounded bg-light text-taupe small font-inter">
+                            <i class="fas fa-thumbs-up text-success mb-2 display-6"></i><br>
+                            System Performance Optimal.<br>No AI analysis required.
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Page Break handled by CSS on .monitor-report-section -->
-
+            <div v-if="index < reportsToList.length - 1" style="page-break-after: always; height: 50px; display: block;"></div>
         </div> <!-- End v-for reportsToList -->
 
         <!-- 6. Footer -->

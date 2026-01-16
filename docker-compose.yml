@@ -31,9 +31,7 @@ services:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
-      # Monitor the Uptime Kuma instance on the same network
       - UPTIME_KUMA_URL=http://uptime-kuma:3001
-      # Credentials should be loaded from the included .env file
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8000/ || exit 1" ]
       interval: 30s

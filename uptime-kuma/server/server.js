@@ -97,7 +97,13 @@ log.debug("server", "Importing Notification");
 const { Notification } = require("./notification");
 Notification.init();
 log.debug("server", "Importing Web-Push");
+log.debug("server", "Importing Web-Push");
 const webpush = require("web-push");
+
+// Initialize Global Latency Background Service
+log.debug("server", "Starting Global Latency Manager");
+const globalLatencyManager = require("./modules/global-latency-manager");
+globalLatencyManager.start();
 
 log.debug("server", "Importing Database");
 const Database = require("./database");
