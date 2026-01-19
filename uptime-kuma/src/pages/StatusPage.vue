@@ -1282,6 +1282,39 @@ footer {
     .date {
         font-size: 12px;
     }
+
+    // Formal Incident Styles (Overrides) - Professional/Corporate Look
+    &.bg-primary {
+        background-color: $obsidian-tide !important;
+        color: $white !important;
+        border: 1px solid darken($obsidian-tide, 10%) !important;
+    }
+
+    &.bg-warning {
+        // Muted Amber/Gold for a professional warning
+        background-color: #d97706 !important; 
+        color: $white !important;
+        border: 1px solid darken(#d97706, 10%) !important;
+    }
+
+    &.bg-danger {
+        // Deep Brick/Crimson for a professional error
+        background-color: #b91c1c !important; 
+        color: $white !important;
+        border: 1px solid darken(#b91c1c, 10%) !important;
+    }
+
+    &.bg-light {
+        background-color: #f3f4f6 !important;
+        color: $obsidian-blue !important;
+        border: 1px solid #d1d5db !important;
+    }
+
+    &.bg-dark {
+        background-color: $obsidian-blue !important;
+        color: $white !important;
+        border: 1px solid darken($obsidian-blue, 10%) !important;
+    }
 }
 
 .maintenance-bg-info {
