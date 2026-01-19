@@ -26,9 +26,11 @@ module.exports.statusPageSocketHandler = (socket) => {
                 throw new Error("slug is not found");
             }
 
+            /*
             await R.exec("UPDATE incident SET pin = 0 WHERE status_page_id = ? ", [
                 statusPageID
             ]);
+            */
 
             let incidentBean;
 
@@ -137,7 +139,7 @@ module.exports.statusPageSocketHandler = (socket) => {
             // If is image data url, convert to png file
             // Else assume it is a url, nothing to do
             if (imgDataUrl.startsWith("data:")) {
-                if (! imgDataUrl.startsWith(header)) {
+                if (!imgDataUrl.startsWith(header)) {
                     throw new Error("Only allowed PNG logo.");
                 }
 
@@ -156,7 +158,7 @@ module.exports.statusPageSocketHandler = (socket) => {
             statusPage.description = config.description;
             statusPage.icon = config.logo;
             statusPage.autoRefreshInterval = config.autoRefreshInterval,
-            statusPage.theme = config.theme;
+                statusPage.theme = config.theme;
             //statusPage.published = ;
             //statusPage.search_engine_index = ;
             statusPage.show_tags = config.showTags;
@@ -226,7 +228,7 @@ module.exports.statusPageSocketHandler = (socket) => {
             // Delete groups that are not in the list
             log.debug("socket", "Delete groups that are not in the list");
             if (groupIDList.length === 0) {
-                await R.exec("DELETE FROM `group` WHERE status_page_id = ?", [ statusPage.id ]);
+                await R.exec("DELETE FROM `group` WHERE status_page_id = ?", [statusPage.id]);
             } else {
                 const slots = groupIDList.map(() => "?").join(",");
 

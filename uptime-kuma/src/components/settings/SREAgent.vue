@@ -1,0 +1,38 @@
+<template>
+    <div>
+        <form class="my-4" autocomplete="off" @submit.prevent="saveSettings">
+            <div class="mb-4">
+                <label class="form-label">{{ $t("SRE Agent System Prompt") }}</label>
+                <textarea
+                    v-model="settings.sre_system_prompt"
+                    class="form-control"
+                    rows="20"
+                    :placeholder="$t('Enter custom system prompt override...')"
+                    style="font-family: monospace; font-size: 0.9em;"
+                ></textarea>
+                <div class="form-text mt-2">
+                    {{ $t("Define the behavior, rules, and output format for the SRE Agent. Leave empty to use the built-in default.") }}
+                </div>
+            </div>
+
+            <div>
+                <button class="btn btn-primary" type="submit">
+                    {{ $t("Save") }}
+                </button>
+            </div>
+        </form>
+    </div>
+</template>
+
+<script>
+export default {
+    computed: {
+        settings() {
+            return this.$parent.$parent.$parent.settings;
+        },
+        saveSettings() {
+            return this.$parent.$parent.$parent.saveSettings;
+        },
+    },
+};
+</script>

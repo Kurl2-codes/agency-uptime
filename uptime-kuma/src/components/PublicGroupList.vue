@@ -82,6 +82,43 @@
                                         <HeartbeatBar size="mid" :monitor-id="monitor.element.id" />
                                     </div>
                                 </div>
+                                
+                                <!-- Children List -->
+                                <div v-if="getChildren(monitor.element).length > 0" class="children-monitor-list">
+                                    <div v-for="childMonitor in getChildren(monitor.element)" :key="childMonitor.id" class="item child-item mt-2">
+                                        <div class="row">
+                                            <div class="col-6 small-padding ps-5">
+                                                <div class="info">
+                                                    <Status v-if="showOnlyLastHeartbeat" :status="statusOfLastHeartbeat(childMonitor.id)" />
+                                                    <Uptime v-else :monitor="childMonitor" type="24" :pill="true" />
+                                                    <a
+                                                        v-if="showLink({element: childMonitor})"
+                                                        :href="childMonitor.url"
+                                                        class="item-name"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        data-testid="monitor-name"
+                                                    >
+                                                        {{ childMonitor.name }}
+                                                    </a>
+                                                    <p v-else class="item-name" data-testid="monitor-name"> {{ childMonitor.name }} </p>
+                                                </div>
+                                                <div class="extra-info">
+                                                    <div v-if="showCertificateExpiry && childMonitor.certExpiryDaysRemaining">
+                                                        <Tag :item="{name: $t('Cert Exp.'), value: formattedCertExpiryMessage({element: childMonitor}), color: certExpiryColor({element: childMonitor})}" :size="'sm'" />
+                                                    </div>
+                                                    <div v-if="showTags">
+                                                        <Tag v-for="tag in childMonitor.tags" :key="tag" :item="tag" :size="'sm'" data-testid="monitor-tag" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div :key="$root.userHeartbeatBar" class="col-6">
+                                                <HeartbeatBar size="mid" :monitor-id="childMonitor.id" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
                         </template>
                     </Draggable>
@@ -146,6 +183,21 @@ export default {
         // Sorting is now handled by GroupSortDropdown component
     },
     methods: {
+        /**
+         * Get children of a monitor
+         * @param {object} monitor Monitor object
+         * @returns {Array} List of children
+         */
+        getChildren(monitor) {
+            if (monitor.children && monitor.children.length > 0) {
+                return monitor.children;
+            }
+            if (monitor.childrenIDs && monitor.childrenIDs.length > 0 && this.$root.monitorList) {
+                 return monitor.childrenIDs.map(id => this.$root.monitorList[id]).filter(m => m);
+            }
+            return [];
+        },
+
         /**
          * Remove the specified group
          * @param {number} index Index of group to remove

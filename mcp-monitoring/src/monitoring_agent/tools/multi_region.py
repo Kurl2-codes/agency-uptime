@@ -207,4 +207,3 @@ async def check_global_latency(url: str):
              "BR (São Paulo)": f"{base_ms + 270}ms",
              "Report Link": "Fallback (Simulation)"
         }
-fix the pdf report and timezone on report

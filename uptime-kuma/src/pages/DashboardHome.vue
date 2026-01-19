@@ -156,7 +156,6 @@ import Datetime from "../components/Datetime.vue";
 import Pagination from "v-pagination-3";
 import Confirm from "../components/Confirm.vue";
 import { timeDurationFormatter } from "../util-frontend";
-import StatusList from "../components/StatusList.vue";
 import ShiftReportDialog from "../components/ShiftReportDialog.vue";
 
 export default {
@@ -165,7 +164,6 @@ export default {
         Status,
         Pagination,
         Confirm,
-        StatusList,
         ShiftReportDialog,
     },
     props: {

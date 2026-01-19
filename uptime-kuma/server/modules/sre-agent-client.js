@@ -11,6 +11,9 @@ async function askSREAgent(message, threadId = "system") {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 Second Timeout
 
+    const { setting } = require("../util-server");
+    const systemPrompt = await setting("sre_system_prompt");
+
     try {
         const response = await fetch(AGENT_URL, {
             method: "POST",
@@ -19,7 +22,8 @@ async function askSREAgent(message, threadId = "system") {
             },
             body: JSON.stringify({
                 message: message,
-                thread_id: threadId
+                thread_id: threadId,
+                system_prompt: systemPrompt
             }),
             signal: controller.signal
         });

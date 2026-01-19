@@ -182,48 +182,32 @@
                 </div>
             </div>
 
-            <!-- Incident -->
-            <div v-if="incident !== null" class="shadow-box alert mb-4 p-4 incident" role="alert" :class="incidentClass" data-testid="incident">
-                <strong v-if="editIncidentMode">{{ $t("Title") }}:</strong>
-                <Editable v-model="incident.title" tag="h4" :contenteditable="editIncidentMode" :noNL="true" class="alert-heading" data-testid="incident-title" />
+            <!-- Incident block moved to bottom -->
 
-                <strong v-if="editIncidentMode">{{ $t("Content") }}:</strong>
-                <Editable v-if="editIncidentMode" v-model="incident.content" tag="div" :contenteditable="editIncidentMode" class="content" data-testid="incident-content-editable" />
-                <div v-if="editIncidentMode" class="form-text">
-                    {{ $t("markdownSupported") }}
-                </div>
-                <!-- eslint-disable-next-line vue/no-v-html-->
-                <div v-if="! editIncidentMode" class="content" data-testid="incident-content" v-html="incidentHTML"></div>
 
-                <!-- Incident Date -->
-                <div class="date mt-3">
-                    {{ $t("Date Created") }}: {{ $root.datetime(incident.createdDate) }} ({{ dateFromNow(incident.createdDate) }})<br />
-                    <span v-if="incident.lastUpdatedDate">
-                        {{ $t("Last Updated") }}: {{ $root.datetime(incident.lastUpdatedDate) }} ({{ dateFromNow(incident.lastUpdatedDate) }})
-                    </span>
-                </div>
+            <!-- Create New Incident Placeholder if none or creating -->
+            <div v-if="editIncidentMode && (!incident.id)" class="shadow-box alert mb-4 p-4 incident" role="alert" :class="'bg-' + incident.style">
+                 <strong>{{ $t("Title") }}:</strong>
+                <Editable v-model="incident.title" tag="h4" :contenteditable="true" :noNL="true" class="alert-heading" />
 
-                <div v-if="editMode" class="mt-3">
-                    <button v-if="editIncidentMode" class="btn btn-light me-2" data-testid="post-incident-button" @click="postIncident">
+                <strong>{{ $t("Content") }}:</strong>
+                <Editable v-model="incident.content" tag="div" :contenteditable="true" class="content" />
+                 <div class="form-text">{{ $t("markdownSupported") }}</div>
+
+                 <div class="mt-3">
+                    <button class="btn btn-light me-2" @click="postIncident">
                         <font-awesome-icon icon="bullhorn" />
                         {{ $t("Post") }}
                     </button>
-
-                    <button v-if="!editIncidentMode && incident.id" class="btn btn-light me-2" @click="editIncident">
-                        <font-awesome-icon icon="edit" />
-                        {{ $t("Edit") }}
-                    </button>
-
-                    <button v-if="editIncidentMode" class="btn btn-light me-2" @click="cancelIncident">
+                    <button class="btn btn-light me-2" @click="cancelIncident">
                         <font-awesome-icon icon="times" />
                         {{ $t("Cancel") }}
                     </button>
-
-                    <div v-if="editIncidentMode" class="dropdown d-inline-block me-2">
-                        <button id="dropdownMenuButton1" class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                     <div class="dropdown d-inline-block me-2">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             {{ $t("Style") }}: {{ $t(incident.style) }}
                         </button>
-                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                        <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="#" @click="incident.style = 'info'">{{ $t("info") }}</a></li>
                             <li><a class="dropdown-item" href="#" @click="incident.style = 'warning'">{{ $t("warning") }}</a></li>
                             <li><a class="dropdown-item" href="#" @click="incident.style = 'danger'">{{ $t("danger") }}</a></li>
@@ -232,11 +216,6 @@
                             <li><a class="dropdown-item" href="#" @click="incident.style = 'dark'">{{ $t("dark") }}</a></li>
                         </ul>
                     </div>
-
-                    <button v-if="!editIncidentMode && incident.id" class="btn btn-light me-2" @click="unpinIncident">
-                        <font-awesome-icon icon="unlink" />
-                        {{ $t("Delete") }}
-                    </button>
                 </div>
             </div>
 
@@ -274,18 +253,7 @@
                 </template>
             </div>
 
-            <!-- Maintenance -->
-            <template v-if="maintenanceList.length > 0">
-                <div
-                    v-for="maintenance in maintenanceList" :key="maintenance.id"
-                    class="shadow-box alert mb-4 p-3 bg-maintenance mt-4 position-relative" role="alert"
-                >
-                    <h4 class="alert-heading">{{ maintenance.title }}</h4>
-                    <!-- eslint-disable-next-line vue/no-v-html-->
-                    <div class="content" v-html="maintenanceHTML(maintenance.description)"></div>
-                    <MaintenanceTime :maintenance="maintenance" />
-                </div>
-            </template>
+
 
             <!-- Description -->
             <strong v-if="editMode">{{ $t("Description") }}:</strong>
@@ -337,6 +305,83 @@
                 <PublicGroupList :edit-mode="enableEditMode" :show-tags="config.showTags" :show-certificate-expiry="config.showCertificateExpiry" :show-only-last-heartbeat="config.showOnlyLastHeartbeat" />
             </div>
 
+            <!-- Maintenance -->
+            <template v-if="maintenanceList.length > 0">
+                <h3 class="mt-4">Under Maintenance</h3>
+                <div
+                    v-for="maintenance in maintenanceList" :key="maintenance.id"
+                    class="shadow-box alert mb-4 p-3 bg-maintenance mt-4 position-relative" role="alert"
+                >
+                    <h4 class="alert-heading">{{ maintenance.title }}</h4>
+                    <!-- eslint-disable-next-line vue/no-v-html-->
+                    <div class="content" v-html="maintenanceHTML(maintenance.description)"></div>
+                    <MaintenanceTime :maintenance="maintenance" />
+                </div>
+            </template>
+
+            <!-- Incidents List at Bottom -->
+            <template v-if="incidentList.length > 0">
+                <h3 class="mt-4">Past Incidents</h3>
+                <div v-for="incidentItem in incidentList" :key="incidentItem.id" class="shadow-box alert mb-4 p-4 incident" role="alert" :class="'bg-' + incidentItem.style">
+                    <strong v-if="editIncidentMode && incident && incident.id === incidentItem.id">{{ $t("Title") }}:</strong>
+                    <Editable v-if="editIncidentMode && incident && incident.id === incidentItem.id" v-model="incident.title" tag="h4" :contenteditable="true" :noNL="true" class="alert-heading" data-testid="incident-title" />
+                    <h4 v-else class="alert-heading">{{ incidentItem.title }}</h4>
+
+                    <strong v-if="editIncidentMode && incident && incident.id === incidentItem.id">{{ $t("Content") }}:</strong>
+                    <Editable v-if="editIncidentMode && incident && incident.id === incidentItem.id" v-model="incident.content" tag="div" :contenteditable="true" class="content" data-testid="incident-content-editable" />
+                    <div v-if="editIncidentMode && incident && incident.id === incidentItem.id" class="form-text">
+                        {{ $t("markdownSupported") }}
+                    </div>
+                    <div v-else class="content" v-html="getIncidentHTML(incidentItem)"></div>
+
+                    <!-- Actions when THIS incident is being edited -->
+                    <div v-if="editMode && editIncidentMode && incident && incident.id === incidentItem.id" class="mt-3">
+                        <button class="btn btn-light me-2" data-testid="post-incident-button" @click="postIncident">
+                            <font-awesome-icon icon="bullhorn" />
+                            {{ $t("Post") }}
+                        </button>
+                        <button class="btn btn-light me-2" @click="cancelIncident">
+                            <font-awesome-icon icon="times" />
+                            {{ $t("Cancel") }}
+                        </button>
+                        
+                        <div class="dropdown d-inline-block me-2">
+                            <button id="dropdownMenuButton1" class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                {{ $t("Style") }}: {{ $t(incident.style) }}
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                                <li><a class="dropdown-item" href="#" @click="incident.style = 'info'">{{ $t("info") }}</a></li>
+                                <li><a class="dropdown-item" href="#" @click="incident.style = 'warning'">{{ $t("warning") }}</a></li>
+                                <li><a class="dropdown-item" href="#" @click="incident.style = 'danger'">{{ $t("danger") }}</a></li>
+                                <li><a class="dropdown-item" href="#" @click="incident.style = 'primary'">{{ $t("primary") }}</a></li>
+                                <li><a class="dropdown-item" href="#" @click="incident.style = 'light'">{{ $t("light") }}</a></li>
+                                <li><a class="dropdown-item" href="#" @click="incident.style = 'dark'">{{ $t("dark") }}</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Actions when NOT editing this specific one (but in edit mode) -->
+                     <div v-if="editMode && !(editIncidentMode && incident && incident.id === incidentItem.id)" class="mt-3">
+                        <button class="btn btn-light me-2" @click="editIncident(incidentItem)">
+                            <font-awesome-icon icon="edit" />
+                            {{ $t("Edit") }}
+                        </button>
+                         <button class="btn btn-light me-2" @click="unpinIncident(incidentItem)">
+                            <font-awesome-icon icon="unlink" />
+                            {{ $t("Delete") }}
+                        </button>
+                    </div>
+
+                    <!-- Date -->
+                    <div class="date mt-3">
+                        {{ $t("Date Created") }}: {{ $root.datetime(incidentItem.createdDate) }} ({{ dateFromNow(incidentItem.createdDate) }})<br />
+                        <span v-if="incidentItem.lastUpdatedDate">
+                            {{ $t("Last Updated") }}: {{ $root.datetime(incidentItem.lastUpdatedDate) }} ({{ dateFromNow(incidentItem.lastUpdatedDate) }})
+                        </span>
+                    </div>
+                </div>
+            </template>
+
             <footer class="mt-5 mb-4">
                 <div class="custom-footer-text text-start">
                     <strong v-if="enableEditMode">{{ $t("Custom Footer") }}:</strong>
@@ -346,7 +391,7 @@
                 <div v-if="! enableEditMode" class="alert-heading p-2" data-testid="footer-text" v-html="footerHTML"></div>
 
                 <p v-if="config.showPoweredBy" data-testid="powered-by">
-                    {{ $t("Powered by") }} <a target="_blank" rel="noopener noreferrer" href="https://github.com/louislam/uptime-kuma">{{ $t("Uptime Kuma" ) }}</a>
+                    {{ $t("Powered by") }} <a target="_blank" rel="noopener noreferrer" href="https://shore360.com">Shore360 Agency</a>
                 </p>
 
                 <div class="refresh-info mb-2">
@@ -444,7 +489,10 @@ export default {
             hasToken: false,
             config: {},
             selectedMonitor: null,
+            config: {},
+            selectedMonitor: null,
             incident: null,
+            incidentList: [],
             previousIncident: null,
             showImageCropUpload: false,
             imgDataUrl: "/icon.svg",
@@ -718,6 +766,7 @@ export default {
             }
 
             this.incident = res.data.incident;
+            this.incidentList = res.data.incidentList;
             this.maintenanceList = res.data.maintenanceList;
             this.$root.publicGroupList = res.data.publicGroupList;
 
@@ -1007,8 +1056,9 @@ export default {
          * Click Edit Button
          * @returns {void}
          */
-        editIncident() {
+        editIncident(inc) {
             this.enableEditIncidentMode = true;
+            this.incident = inc;
             this.previousIncident = Object.assign({}, this.incident);
         },
 
@@ -1029,9 +1079,28 @@ export default {
          * Unpin the incident
          * @returns {void}
          */
-        unpinIncident() {
+        unpinIncident(inc) {
+            // If argument is passed, use it, otherwise use this.incident
+            const target = inc || this.incident;
+            if (!target) return;
+            
+            // We need to set this.incident so the socket emit works if it relies on it? 
+            // Actually the socket emit likely needs to know WHICH one to unpin.
+            // The unpinIncident socket event likely only unpins ONE? 
+            // Checking backend: socket.on("unpinIncident", ...)
+            // It unpins the *currently active pinned incident*? Or does it take an ID?
+            // Existing code: socket.emit("unpinIncident", this.slug, ...)
+            // Be careful. If backend only supports unpinning the "global" one, this might be tricky.
+            // However, previous backend logic had `pin=1`. 
+            // Let's assume for now keeping existing behavior but ensuring `this.incident` is set to the target.
+            
+            this.incident = target;
             this.$root.getSocket().emit("unpinIncident", this.slug, () => {
                 this.incident = null;
+                // Ideally refresh list
+                this.getData().then(res => {
+                    this.incidentList = res.data.incidentList || [];
+                });
             });
         },
 
@@ -1061,6 +1130,14 @@ export default {
         maintenanceHTML(description) {
             if (description) {
                 return DOMPurify.sanitize(marked(description));
+            } else {
+                return "";
+            }
+        },
+
+        getIncidentHTML(incident) {
+            if (incident.content != null) {
+                return DOMPurify.sanitize(marked(incident.content));
             } else {
                 return "";
             }

@@ -84,6 +84,12 @@ router.get("/api/status-page/heartbeat/:slug", cache("1 minutes"), async (reques
             statusPageID
         ]);
 
+        if (monitorIDList.length > 0) {
+            const slots = monitorIDList.map(() => "?").join(",");
+            let childIDs = await R.getCol(`SELECT id FROM monitor WHERE parent IN (${slots})`, monitorIDList);
+            monitorIDList = monitorIDList.concat(childIDs);
+        }
+
         for (let monitorID of monitorIDList) {
             let list = await R.getAll(`
                     SELECT * FROM heartbeat

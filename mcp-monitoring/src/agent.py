@@ -73,17 +73,16 @@ async def run_chat_loop():
                      table.add_row(t.name, (t.description or "")[:50] + "...")
                 console.print(table)
                 
-                # 2. Setup Model
+          
                 if not os.environ.get("OPENAI_API_KEY"):
                     console.print("[bold red]Error: OPENAI_API_KEY not found.[/bold red]")
                     return
     
                 model = ChatOpenAI(model="gpt-5-mini")
                 
-                # 3. Build Graph
+               
                 graph = build_graph(model, tools)
                 
-                # 4. Chat Loop
                 console.print(Panel("[bold yellow]System Ready. I am your SRE Assistant.[/bold yellow]\nType 'exit' to quit.", title="SRE Agent", border_style="yellow"))
                 
                 config = {"configurable": {"thread_id": "1"}} 

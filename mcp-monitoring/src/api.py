@@ -71,15 +71,11 @@ async def lifespan(app: FastAPI):
                 logger.info(f"Retrying in {retry_delay} seconds...")
                 await asyncio.sleep(retry_delay)
 
-        # Optimization:
-        # 1. Use gpt-4o-mini for speed and cost.
-        # 2. Set temperature=0 for deterministic responses (avoids regeneration).
-        # 3. Increase max_retries for robustness.
+    
         model = ChatOpenAI(
             model="gpt-4o-mini",
             temperature=0,
             max_retries=3,
-            # connection pool settings are handled by the underlying httpx client, usually default is good.
         )
         api_context.graph = build_graph(model, tools)
         
@@ -105,6 +101,7 @@ app = FastAPI(lifespan=lifespan)
 class ChatRequest(BaseModel):
     message: str
     thread_id: str = "default"
+    system_prompt: str | None = None
 
 class ChatResponse(BaseModel):
     response: str
@@ -132,7 +129,9 @@ async def chat(request: ChatRequest, raw_request: Request):
         
         input_messages = []
         if not state.values:
-            input_messages.append(SystemMessage(content=SYSTEM_PROMPT))
+            # Use provided system_prompt or fallback to default
+            prompt_content = request.system_prompt if request.system_prompt else SYSTEM_PROMPT
+            input_messages.append(SystemMessage(content=prompt_content))
         
         input_messages.append(HumanMessage(content=request.message))
         

@@ -122,6 +122,14 @@
                                 <input id="name" v-model="monitor.name" type="text" class="form-control" data-testid="friendly-name-input" :placeholder="defaultFriendlyName">
                             </div>
 
+                            <!-- Active -->
+                            <div class="my-3 form-check">
+                                <input id="monitor-active" v-model="monitor.active" class="form-check-input" type="checkbox">
+                                <label class="form-check-label" for="monitor-active">
+                                    {{ $t("Start monitoring after save") }}
+                                </label>
+                            </div>
+
                             <!-- Manual Status switcher -->
                             <div v-if="monitor.type === 'manual'" class="mb-3">
                                 <div class="btn-group w-100 mb-3">
@@ -1315,6 +1323,7 @@ const toast = useToast();
 const pushTokenLength = 32;
 
 const monitorDefaults = {
+    active: true,
     type: "http",
     name: "",
     parent: null,

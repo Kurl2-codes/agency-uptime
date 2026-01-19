@@ -1,5 +1,6 @@
 {
     "languageName": "English",
+    "Start monitoring after save": "Start monitoring after save",
     "setupDatabaseChooseDatabase": "Which database would you like to use?",
     "setupDatabaseEmbeddedMariaDB": "You don't need to set anything. This Docker image has embedded and configured MariaDB for you automatically. Agency Uptime will connect to this database via Unix socket.",
     "setupDatabaseSQLite": "A simple database file, recommended for small-scale deployments. Prior to v2.0.0, Agency Uptime used SQLite as the default database.",

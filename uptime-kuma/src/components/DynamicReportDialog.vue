@@ -474,13 +474,29 @@ export default defineComponent({
             return dayjs.utc(dateStr).tz("Asia/Manila").format("MMMM D, YYYY");
         },
         // @ts-ignore
+        // @ts-ignore
         getUptimeColor(uptime: number) {
+            // Logic: 100% -> Green
+            // 99% - 99.9% -> Light Orange
+            // 98% - 99% -> Orange
+            // 96% - 98% -> Dark Orange / Red-Orange
+            // < 96% -> Red
+
+            if (uptime >= 1.0) {
+                return "#198754"; // Success Green
+            }
+            if (uptime >= 0.999) {
+                 return "#198754"; // Still treat 99.9% as mostly green/success
+            }
             if (uptime >= 0.99) {
-                return "#198754";
-            } // Success Green
-            if (uptime >= 0.95) {
-                return "#ffc107";
-            } // Warning Yellow
+                return "#ffc107"; // Light Orange / Warning Yellow
+            }
+            if (uptime >= 0.98) {
+                return "#fd7e14"; // Orange
+            }
+            if (uptime >= 0.96) {
+                return "#dc3545"; // Red (Monitoring standard usually jumps to red quickly below 98/99)
+            }
             return "#dc3545"; // Danger Red
         },
         // @ts-ignore

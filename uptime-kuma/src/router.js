@@ -33,6 +33,7 @@ import Proxies from "./components/settings/Proxies.vue";
 import About from "./components/settings/About.vue";
 import RemoteBrowsers from "./components/settings/RemoteBrowsers.vue";
 import ShiftTime from "./components/settings/ShiftTime.vue";
+import SREAgent from "./components/settings/SREAgent.vue";
 
 const routes = [
     {
@@ -140,6 +141,10 @@ const routes = [
                             {
                                 path: "shift-time",
                                 component: ShiftTime,
+                            },
+                            {
+                                path: "sre-agent",
+                                component: SREAgent,
                             },
                         ]
                     },

@@ -16,7 +16,7 @@ class StatusPage extends BeanModel {
      * Like this: { "test-uptime.kuma.pet": "default" }
      * @type {{}}
      */
-    static domainMappingList = { };
+    static domainMappingList = {};
 
     /**
      * Handle responses to RSS pages
@@ -174,7 +174,7 @@ class StatusPage extends BeanModel {
             }
         }
 
-        if (! hasUp) {
+        if (!hasUp) {
             status = STATUS_PAGE_ALL_DOWN;
         }
 
@@ -231,7 +231,7 @@ class StatusPage extends BeanModel {
         for (let groupBean of list) {
             let monitorGroup = await groupBean.toPublicJSON(showTags, config?.showCertificateExpiry);
             for (const monitor of monitorGroup.monitorList) {
-                const heartbeat = await R.findOne("heartbeat", "monitor_id = ? ORDER BY time DESC", [ monitor.id ]);
+                const heartbeat = await R.findOne("heartbeat", "monitor_id = ? ORDER BY time DESC", [monitor.id]);
                 if (heartbeat) {
                     heartbeats.push({
                         ...monitor,
@@ -264,12 +264,19 @@ class StatusPage extends BeanModel {
         const config = await statusPage.toPublicJSON();
 
         // Incident
-        let incident = await R.findOne("incident", " pin = 1 AND active = 1 AND status_page_id = ? ", [
+        // Incident
+        let incidentBeans = await R.find("incident", " pin = 1 AND active = 1 AND status_page_id = ? ORDER BY id DESC ", [
             statusPage.id,
         ]);
 
-        if (incident) {
-            incident = incident.toPublicJSON();
+        let incidentList = [];
+        let incident = null;
+
+        if (incidentBeans.length > 0) {
+            incident = incidentBeans[0].toPublicJSON();
+            for (let bean of incidentBeans) {
+                incidentList.push(bean.toPublicJSON());
+            }
         }
 
         let maintenanceList = await StatusPage.getMaintenanceList(statusPage.id);
@@ -291,6 +298,7 @@ class StatusPage extends BeanModel {
         return {
             config,
             incident,
+            incidentList,
             publicGroupList,
             maintenanceList,
         };
@@ -473,7 +481,7 @@ class StatusPage extends BeanModel {
                 SELECT DISTINCT maintenance_id
                 FROM maintenance_status_page
                 WHERE status_page_id = ?
-            `, [ statusPageId ]);
+            `, [statusPageId]);
 
             for (const maintenanceID of maintenanceIDList) {
                 let maintenance = UptimeKumaServer.getInstance().getMaintenance(maintenanceID);

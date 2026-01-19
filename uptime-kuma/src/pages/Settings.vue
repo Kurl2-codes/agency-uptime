@@ -119,6 +119,9 @@ export default {
                 "shift-time": {
                     title: this.$t("Shift Time"),
                 },
+                "sre-agent": {
+                    title: this.$t("SRE Agent"),
+                },
                 about: {
                     title: this.$t("About"),
                 },
