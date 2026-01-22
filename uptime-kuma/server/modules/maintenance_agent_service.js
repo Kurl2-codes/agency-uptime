@@ -11,7 +11,8 @@ const { askSREAgent } = require("./sre-agent-client");
 async function scanAndCreateMaintenance() {
     const server = UptimeKumaServer.getInstance();
 
-    const prompt = `
+    const maintenancePromptRow = await R.findOne("maintenance_agent_prompt", " 1=1 ORDER BY id DESC ");
+    const prompt = maintenancePromptRow ? maintenancePromptRow.prompt : `
     You are an intelligent SRE Assistant. 
     Your task is to scan the email inbox for ANY maintenance-related emails.
     
@@ -134,7 +135,7 @@ async function scanAndCreateMaintenance() {
         }
 
         if (isDuplicate) {
-            console.log(`Duplicate found for '${item.title}'. Skipping.`);
+            log.warn("agent", `Duplicate found for '${item.title}'. Skipping.`);
             continue;
         }
 

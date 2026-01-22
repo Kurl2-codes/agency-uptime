@@ -97,7 +97,7 @@ log.debug("server", "Importing Notification");
 const { Notification } = require("./notification");
 Notification.init();
 log.debug("server", "Importing Web-Push");
-log.debug("server", "Importing Web-Push");
+
 const webpush = require("web-push");
 
 // Initialize Global Latency Background Service
@@ -161,8 +161,7 @@ const { resetChrome } = require("./monitor-types/real-browser-monitor-type");
 const { EmbeddedMariaDB } = require("./embedded-mariadb");
 const { SetupDatabase } = require("./setup-database");
 const { chartSocketHandler } = require("./socket-handlers/chart-socket-handler");
-const { reportSocketHandler } = require("./socket-handlers/report-socket-handler");
-const { weeklyReportSocketHandler } = require("./socket-handlers/weekly-report-socket-handler");
+
 const { mariadbReportHandler } = require("./socket-handlers/mariadb-report-handler");
 
 app.use(express.json());
@@ -1503,6 +1502,84 @@ let needSetup = false;
             }
         });
 
+        socket.on("getSREPrompt", async (callback) => {
+            try {
+                checkLogin(socket);
+                const row = await R.findOne("sre_agent_prompt", " 1=1 ORDER BY id DESC ");
+                callback({
+                    ok: true,
+                    prompt: row ? row.prompt : "",
+                });
+            } catch (e) {
+                callback({
+                    ok: false,
+                    msg: e.message,
+                });
+            }
+        });
+
+        socket.on("setSREPrompt", async (prompt, callback) => {
+            try {
+                checkLogin(socket);
+                let row = await R.findOne("sre_agent_prompt", " 1=1 ORDER BY id DESC ");
+                if (!row) {
+                    row = R.dispense("sre_agent_prompt");
+                }
+                row.prompt = prompt;
+                row.updated_at = R.isoDateTime();
+                await R.store(row);
+                callback({
+                    ok: true,
+                    msg: "Saved.",
+                    msgi18n: true,
+                });
+            } catch (e) {
+                callback({
+                    ok: false,
+                    msg: e.message,
+                });
+            }
+        });
+
+        socket.on("getMaintenancePrompt", async (callback) => {
+            try {
+                checkLogin(socket);
+                const row = await R.findOne("maintenance_agent_prompt", " 1=1 ORDER BY id DESC ");
+                callback({
+                    ok: true,
+                    prompt: row ? row.prompt : "",
+                });
+            } catch (e) {
+                callback({
+                    ok: false,
+                    msg: e.message,
+                });
+            }
+        });
+
+        socket.on("setMaintenancePrompt", async (prompt, callback) => {
+            try {
+                checkLogin(socket);
+                let row = await R.findOne("maintenance_agent_prompt", " 1=1 ORDER BY id DESC ");
+                if (!row) {
+                    row = R.dispense("maintenance_agent_prompt");
+                }
+                row.prompt = prompt;
+                row.updated_at = R.isoDateTime();
+                await R.store(row);
+                callback({
+                    ok: true,
+                    msg: "Saved.",
+                    msgi18n: true,
+                });
+            } catch (e) {
+                callback({
+                    ok: false,
+                    msg: e.message,
+                });
+            }
+        });
+
         // Add or Edit
         socket.on("addNotification", async (notification, notificationID, callback) => {
             try {
@@ -1689,8 +1766,7 @@ let needSetup = false;
         remoteBrowserSocketHandler(socket);
         generalSocketHandler(socket, server);
         chartSocketHandler(socket);
-        reportSocketHandler(socket);
-        weeklyReportSocketHandler(socket);
+
         mariadbReportHandler(socket);
 
         log.debug("server", "added all socket handlers");

@@ -122,6 +122,9 @@ export default {
                 "sre-agent": {
                     title: this.$t("SRE Agent"),
                 },
+                "maintenance-agent": {
+                    title: this.$t("Maintenance Agent"),
+                },
                 about: {
                     title: this.$t("About"),
                 },

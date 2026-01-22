@@ -1,10 +1,10 @@
 <template>
     <div>
-        <form class="my-4" autocomplete="off" @submit.prevent="saveSettings">
+        <form class="my-4" autocomplete="off" @submit.prevent="savePrompt">
             <div class="mb-4">
                 <label class="form-label">{{ $t("SRE Agent System Prompt") }}</label>
                 <textarea
-                    v-model="settings.sre_system_prompt"
+                    v-model="prompt"
                     class="form-control"
                     rows="20"
                     :placeholder="$t('Enter custom system prompt override...')"
@@ -26,12 +26,28 @@
 
 <script>
 export default {
-    computed: {
-        settings() {
-            return this.$parent.$parent.$parent.settings;
+    data() {
+        return {
+            prompt: "",
+        };
+    },
+    mounted() {
+        this.loadPrompt();
+    },
+    methods: {
+        loadPrompt() {
+            this.$root.getSocket().emit("getSREPrompt", (res) => {
+                if (res.ok) {
+                    this.prompt = res.prompt;
+                } else {
+                    this.$root.toastError(res.msg);
+                }
+            });
         },
-        saveSettings() {
-            return this.$parent.$parent.$parent.saveSettings;
+        savePrompt() {
+            this.$root.getSocket().emit("setSREPrompt", this.prompt, (res) => {
+                this.$root.toastRes(res);
+            });
         },
     },
 };

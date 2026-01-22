@@ -34,6 +34,7 @@ import About from "./components/settings/About.vue";
 import RemoteBrowsers from "./components/settings/RemoteBrowsers.vue";
 import ShiftTime from "./components/settings/ShiftTime.vue";
 import SREAgent from "./components/settings/SREAgent.vue";
+import MaintenanceAgent from "./components/settings/MaintenanceAgent.vue";
 
 const routes = [
     {
@@ -145,6 +146,10 @@ const routes = [
                             {
                                 path: "sre-agent",
                                 component: SREAgent,
+                            },
+                            {
+                                path: "maintenance-agent",
+                                component: MaintenanceAgent,
                             },
                         ]
                     },

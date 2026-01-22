@@ -11,9 +11,10 @@ async function askSREAgent(message, threadId = "system", systemPromptOverride = 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 Second Timeout
 
-    const { setting } = require("../util-server");
-    // Use override if provided, otherwise fetch from settings
-    const systemPrompt = systemPromptOverride || await setting("sre_system_prompt");
+    const { R } = require("redbean-node");
+    const row = await R.findOne("sre_agent_prompt", " 1=1 ORDER BY id DESC ");
+    // Use override if provided, otherwise fetch from database
+    const systemPrompt = systemPromptOverride || (row ? row.prompt : null);
 
     try {
         const response = await fetch(AGENT_URL, {
