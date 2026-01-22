@@ -201,6 +201,10 @@ const routes = [
         component: StatusPage,
     },
     {
+        path: "/status/:slug/widget",
+        component: () => import("./pages/StatusWidget.vue"),
+    },
+    {
         path: "/:pathMatch(.*)*",
         component: NotFound,
     },

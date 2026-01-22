@@ -14,6 +14,7 @@ services:
     restart: unless-stopped
     environment:
       - MCP_AGENT_URL=http://mcp-agent:8000/chat
+      - TZ=Asia/Manila
     networks:
       - agency-network
     extra_hosts:
@@ -23,8 +24,11 @@ services:
     build:
       context: ./mcp-monitoring
     env_file:
+      - .env
       - ./mcp-monitoring/.env
     container_name: mcp-agent
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - mcp-logs:/app/logs
     ports:
@@ -32,6 +36,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - UPTIME_KUMA_URL=http://uptime-kuma:3001
+      - TZ=Asia/Manila
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8000/ || exit 1" ]
       interval: 30s

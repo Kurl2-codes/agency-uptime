@@ -1,6 +1,19 @@
 <template>
     <div class="input-group">
+        <textarea
+            v-if="type === 'textarea'"
+            :id="id"
+            ref="input"
+            v-model="model"
+            class="form-control"
+            :placeholder="placeholder"
+            :required="required"
+            :readonly="readonly"
+            :disabled="disabled"
+            :rows="rows"
+        ></textarea>
         <input
+            v-else
             :id="id"
             ref="input"
             v-model="model"
@@ -37,6 +50,11 @@ export default {
         type: {
             type: String,
             default: "text"
+        },
+        /** Number of rows (for textarea) */
+        rows: {
+            type: Number,
+            default: 3
         },
         /** The value of the input */
         modelValue: {

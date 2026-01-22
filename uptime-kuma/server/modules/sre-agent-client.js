@@ -6,13 +6,14 @@
  * @param {string} threadId - Unique ID for the conversation context (optional).
  * @returns {Promise<string>} - The agent's reasoning.
  */
-async function askSREAgent(message, threadId = "system") {
+async function askSREAgent(message, threadId = "system", systemPromptOverride = null) {
     const AGENT_URL = process.env.MCP_AGENT_URL || "http://127.0.0.1:8000/chat";
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 Second Timeout
 
     const { setting } = require("../util-server");
-    const systemPrompt = await setting("sre_system_prompt");
+    // Use override if provided, otherwise fetch from settings
+    const systemPrompt = systemPromptOverride || await setting("sre_system_prompt");
 
     try {
         const response = await fetch(AGENT_URL, {

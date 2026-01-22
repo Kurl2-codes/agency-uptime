@@ -9,6 +9,12 @@
                 <router-link to="/add-maintenance" class="btn btn-primary mb-3">
                     <font-awesome-icon icon="plus" /> {{ $t("Schedule Maintenance") }}
                 </router-link>
+
+                <button class="btn btn-info mb-3 ms-2" :disabled="scanning" @click="scanEmails">
+                    <font-awesome-icon v-if="scanning" icon="spinner" spin />
+                    <font-awesome-icon v-else icon="envelope" /> 
+                    {{ scanning ? $t("Scanning...") : $t("Scan Emails") }}
+                </button>
             </div>
 
             <div class="shadow-box">
@@ -100,7 +106,8 @@ export default {
                 "inactive": 800,
                 "ended": 700,
                 "unknown": 0,
-            }
+            },
+            scanning: false,
         };
     },
     computed: {
@@ -122,6 +129,31 @@ export default {
 
     },
     methods: {
+        async scanEmails() {
+            this.scanning = true;
+            try {
+                const axios = await import("axios");
+                const res = await axios.default.post("/api/maintenance/scan-emails");
+                
+                if (res.data.ok) {
+                    this.$root.toastSuccess(res.data.msg);
+                    if (res.data.count > 0) {
+                        // Force data refresh
+                         this.$root.getSocket().emit("getMaintenanceList", () => {});
+                         setTimeout(() => {
+                            location.reload();
+                         }, 1000);
+                    }
+                } else {
+                    this.$root.toastError(res.data.msg);
+                }
+            } catch (e) {
+                console.error(e);
+                this.$root.toastError(e.message);
+            } finally {
+                this.scanning = false;
+            }
+        },
         /**
          * Get the correct URL for the icon
          * @param {string} icon Path for icon

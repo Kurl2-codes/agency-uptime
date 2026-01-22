@@ -20,8 +20,11 @@
                     </div>
 
                     <div v-else>
-                        <div class="alert alert-info">
+                        <div v-if="report.period" class="alert alert-info">
                             <strong>{{ $t("Period") }}:</strong> {{ formatTime(report.period.start) }} - {{ formatTime(report.period.end) }}
+                        </div>
+                        <div v-else class="alert alert-info">
+                            <strong>{{ $t("Period") }}:</strong> {{ $t("Last 24 Hours") }}
                         </div>
                         
                         <div class="card mb-3">

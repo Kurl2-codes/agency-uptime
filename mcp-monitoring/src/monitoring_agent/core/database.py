@@ -14,7 +14,8 @@ _db_pool = None
 def get_db_pool():
     global _db_pool
     if _db_pool is None:
-        db_host = os.getenv("DB_HOST", os.getenv("UPTIME_KUMA_DB_HOST", "localhost"))
+        # Check HOST, then HOSTNAME (common variant), else localhost
+        db_host = os.getenv("DB_HOST", os.getenv("UPTIME_KUMA_DB_HOST", os.getenv("UPTIME_KUMA_DB_HOSTNAME", "localhost")))
         db_user = os.getenv("DB_USER", os.getenv("UPTIME_KUMA_DB_USER", "kuma"))
         db_pass = os.getenv("DB_PASSWORD", os.getenv("UPTIME_KUMA_DB_PASSWORD"))
         db_name = os.getenv("DB_NAME", os.getenv("UPTIME_KUMA_DB_NAME", "kuma"))

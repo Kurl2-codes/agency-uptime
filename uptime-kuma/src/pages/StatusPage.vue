@@ -390,6 +390,13 @@
                 <!-- eslint-disable-next-line vue/no-v-html-->
                 <div v-if="! enableEditMode" class="alert-heading p-2" data-testid="footer-text" v-html="footerHTML"></div>
 
+                <div class="mb-3">
+                     <button class="btn btn-outline-secondary btn-sm" @click="showEmbedWidgetDialog">
+                        <font-awesome-icon icon="code" /> {{ $t("Get Status Widget") }}
+                    </button>
+                    <!-- Add other footer links here if needed -->
+                </div>
+
                 <p v-if="config.showPoweredBy" data-testid="powered-by">
                     {{ $t("Powered by") }} <a target="_blank" rel="noopener noreferrer" href="https://shore360.com">Shore360 Agency</a>
                 </p>
@@ -404,6 +411,8 @@
         <Confirm ref="confirmDelete" btn-style="btn-danger" :yes-text="$t('Yes')" :no-text="$t('No')" @yes="deleteStatusPage">
             {{ $t("deleteStatusPageMsg") }}
         </Confirm>
+
+        <EmbedWidgetDialog ref="embedWidgetDialog" :slug="slug" />
 
         <component is="style" v-if="config.customCSS" type="text/css">
             {{ config.customCSS }}
@@ -435,6 +444,8 @@ import { STATUS_PAGE_ALL_DOWN, STATUS_PAGE_ALL_UP, STATUS_PAGE_MAINTENANCE, STAT
 import Tag from "../components/Tag.vue";
 import VueMultiselect from "vue-multiselect";
 
+import EmbedWidgetDialog from "../components/EmbedWidgetDialog.vue";
+
 const toast = useToast();
 dayjs.extend(duration);
 
@@ -456,7 +467,8 @@ export default {
         PrismEditor,
         MaintenanceTime,
         Tag,
-        VueMultiselect
+        VueMultiselect,
+        EmbedWidgetDialog
     },
 
     // Leave Page for vue route change
@@ -1141,6 +1153,10 @@ export default {
             } else {
                 return "";
             }
+        },
+
+        showEmbedWidgetDialog() {
+            this.$refs.embedWidgetDialog.show();
         },
 
     }

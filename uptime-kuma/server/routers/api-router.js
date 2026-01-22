@@ -44,6 +44,20 @@ router.get("/api/entry-page", async (request, response) => {
     response.json(result);
 });
 
+router.get("/api/maintenance", async (request, response) => {
+    allowDevAllOrigin(response);
+    try {
+        // Fetch all active maintenance
+        const maintenanceList = await R.getAll("SELECT * FROM maintenance ORDER BY start_date DESC");
+        response.json({
+            ok: true,
+            data: maintenanceList
+        });
+    } catch (e) {
+        response.status(500).json({ ok: false, msg: e.message });
+    }
+});
+
 router.all("/api/push/:pushToken", async (request, response) => {
     try {
         let pushToken = request.params.pushToken;
@@ -635,6 +649,7 @@ function determineStatus(status, previousHeartbeat, maxretries, isUpsideDown, be
 
 // Import askSREAgent
 const { askSREAgent } = require("../modules/sre-agent-client");
+const { scanAndCreateMaintenance } = require("../modules/maintenance_agent_service");
 
 router.get("/api/reports/shift-summary", cache("5 minutes"), async (request, response) => {
     allowAllOrigin(response);
@@ -688,7 +703,11 @@ router.get("/api/reports/shift-summary", cache("5 minutes"), async (request, res
             return response.json({
                 summary: "No incidents or maintenance windows occurred during this shift. All systems operational.",
                 incident_count: 0,
-                critical_count: 0
+                critical_count: 0,
+                period: {
+                    start: startStr,
+                    end: endStr
+                }
             });
         }
 
@@ -725,6 +744,20 @@ router.get("/api/reports/shift-summary", cache("5 minutes"), async (request, res
     } catch (e) {
         log.error("api", e);
         sendHttpError(response, e.message);
+    }
+});
+
+// POC: Maintenance from Email
+router.post("/api/maintenance/scan-emails", async (request, response) => {
+    try {
+        const result = await scanAndCreateMaintenance();
+        response.json(result);
+    } catch (e) {
+        log.error("api", e);
+        response.status(500).json({
+            ok: false,
+            msg: e.message
+        });
     }
 });
 
