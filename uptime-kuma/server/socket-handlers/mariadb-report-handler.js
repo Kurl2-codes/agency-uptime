@@ -381,20 +381,13 @@ async function generateSingleMonitorStats(monitorID, startDate, endDate) {
         const durationContext = exampleEvent ? exampleEvent.durationStr : "unknown";
 
         const prompt = `
-            You are a Site Reliability Engineer (SRE) Agent.
-            I encountered a monitor error: "${errorMsg}".
-            
-            Context:
+            Analyze the following monitor error based on your system instructions:
+            - Error: "${errorMsg}"
             - Monitor Name: "${monitorName}"
             - Target URL: "${monitorUrl}"
             - Downtime Duration: ${durationContext}
-
-            Please provide a concise analysis in two parts:
-            1. <b>Reasoning:</b> Brief technical explanation of why this error occurred.
-            2. <b>Recommendation:</b> Actionable steps to fix it.
-            IMPORTANT: Format the recommendations as an HTML unordered list (<ul><li>...</li></ul>).
-            Do NOT use Markdown (no * or -). Use only HTML tags.
         `.trim().replace(/\s+/g, " ");
+
 
         try {
             console.log(`[Report] Fetching fresh advice for: "${errorMsg}"`);
@@ -574,20 +567,13 @@ module.exports.mariadbReportHandler = (socket) => {
             }
 
             const prompt = `
-                You are a Site Reliability Engineer (SRE) Agent.
-                I encountered a monitor error: "${errorMsg}".
-                
-                Context:
+                Analyze the following monitor error based on your system instructions:
+                - Error: "${errorMsg}"
                 - Monitor Name: "${monitorName}"
                 - Target URL: "${monitorUrl}"
                 - Downtime Duration: ${durationContext}
-
-                Please provide a concise analysis in two parts:
-                1. <b>Reasoning:</b> Brief technical explanation of why this error occurred.
-                2. <b>Recommendation:</b> Actionable steps to fix it.
-                IMPORTANT: Format the recommendations as an HTML unordered list (<ul><li>...</li></ul>).
-                Do NOT use Markdown (no * or -). Use only HTML tags.
             `.trim().replace(/\s+/g, " ");
+
 
             const advice = await askSREAgent(prompt, `retry-${monitorID}`);
 

@@ -9,12 +9,6 @@
                 <router-link to="/add-maintenance" class="btn btn-primary mb-3">
                     <font-awesome-icon icon="plus" /> {{ $t("Schedule Maintenance") }}
                 </router-link>
-
-                <button class="btn btn-info mb-3 ms-2" :disabled="scanning" @click="scanEmails">
-                    <font-awesome-icon v-if="scanning" icon="spinner" spin />
-                    <font-awesome-icon v-else icon="envelope" /> 
-                    {{ scanning ? $t("Scanning...") : $t("Scan Emails") }}
-                </button>
             </div>
 
             <div class="shadow-box">

@@ -139,7 +139,7 @@
                         class="btn btn-normal"
                         @click="showReportDialog"
                     >
-                        <font-awesome-icon icon="file-alt" /> {{ $t("Agency Performance Report") }}
+                        <font-awesome-icon icon="file-alt" /> {{ $t("Agency Report") }}
                     </button>
                 </div>
             </div>

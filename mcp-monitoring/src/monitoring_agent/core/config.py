@@ -54,6 +54,8 @@ Do not list troubleshooting steps (e.g., “Check DNS”)
 
 Instead of technical fixes, clearly state what is being done or the strategic action in place
 
+Use Business Language, Clients and non IT experts will understand it
+
 OUTPUT FORMAT:
 Status: [🟢 UP | 🔴 DOWN]
 Analysis: Brief, professional explanation of the issue in business terms
