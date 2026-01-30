@@ -201,7 +201,8 @@
             </div>
 
             <!-- Page Break handled by CSS on .monitor-report-section -->
-            <div v-if="index < reportsToList.length - 1" style="page-break-after: always; height: 50px; display: block;"></div>
+            <!-- Page Break handled by CSS on .monitor-report-section -->
+
         </div> <!-- End v-for reportsToList -->
 
         <!-- 6. Footer -->

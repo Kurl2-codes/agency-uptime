@@ -171,7 +171,9 @@ optgroup {
     }
 
     .dark & {
-        color: $dark-font-color2;
+        background-color: $liquid-lava;
+        border-color: $liquid-lava;
+        color: $white;
     }
 }
 
@@ -306,11 +308,11 @@ optgroup {
 
 // Dark Theme override here
 .dark {
-    // Force Light/White Theme even in Dark Mode settings
-    background-color: $white !important;
-    color: $obsidian-blue !important;
+    // Agency Dark Mode
+    background-color: $obsidian-blue !important;
+    color: $white !important;
 
-    // Force Headers
+    // Headers
     h1,
     h2,
     h3,
@@ -320,7 +322,7 @@ optgroup {
     .card-title,
     .title,
     .section-title {
-        color: $obsidian-blue !important;
+        color: $white !important;
     }
 
     mark,
@@ -337,9 +339,9 @@ optgroup {
     .card,
     .modal-content {
         &:not(.alert) {
-            background-color: $dark-bg2 !important; // Obsidian Eclipse for containers
+            background-color: $obsidian-eclipse !important; // Obsidian Eclipse for containers
             color: $white !important;
-            border-color: $dark-border-color;
+            border-color: $obsidian-tide;
         }
     }
 
@@ -476,11 +478,11 @@ optgroup {
     .monitor-list {
         .item {
             &:hover {
-                background-color: $dark-bg2;
+                background-color: $obsidian-eclipse;
             }
 
             &.active {
-                background-color: $dark-bg2;
+                background-color: $obsidian-eclipse;
             }
         }
     }
@@ -489,10 +491,10 @@ optgroup {
         .table-shadow-box {
             tbody {
                 .shadow-box {
-                    background-color: $dark-bg2;
+                    background-color: $obsidian-eclipse;
 
                     td {
-                        border-bottom: 1px solid $dark-border-color;
+                        border-bottom: 1px solid $obsidian-tide;
                     }
                 }
             }
