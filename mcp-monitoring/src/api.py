@@ -38,8 +38,11 @@ class ChatRequest(BaseModel):
     thread_id: str = "default"
     system_prompt: str | None = None
 
+import uuid
+
 class ChatResponse(BaseModel):
     response: str
+    thread_id: str
     history: List[Dict]
 
 # --- Endpoints ---
@@ -95,10 +98,13 @@ async def chat_endpoint(request: Request):
     if not api_context.graph:
         raise HTTPException(status_code=503, detail="Agent not initialized")
     
-    user_agent = request.headers.get('user-agent', 'unknown')
-    logger.info(f"API Request From [{user_agent}] - Thread: {internal_req.thread_id} - Prompt: {internal_req.system_prompt[:30] if internal_req.system_prompt else 'None'}...")
+    # Generate new thread_id if none provided
+    thread_id = internal_req.thread_id or str(uuid.uuid4())
     
-    config = {"configurable": {"thread_id": internal_req.thread_id}}
+    user_agent = request.headers.get('user-agent', 'unknown')
+    logger.info(f"API Request From [{user_agent}] - Thread: {thread_id} - Prompt: {internal_req.system_prompt[:30] if internal_req.system_prompt else 'None'}...")
+    
+    config = {"configurable": {"thread_id": thread_id}}
     
     try:
         # Check if conversation already exists
@@ -140,7 +146,8 @@ async def chat_endpoint(request: Request):
         final_msg = result["messages"][-1]
         
         return ChatResponse(
-            response=final_msg.content, 
+            response=final_msg.content,
+            thread_id=thread_id,
             history=[{"role": m.type, "content": m.content} for m in result["messages"]]
         )
         

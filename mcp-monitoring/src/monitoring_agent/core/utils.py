@@ -50,13 +50,13 @@ async def process_incoming_request(request):
         raw_body = await request.json()
     except Exception as e:
         # If body is empty or invalid, return empty defaults (handled by caller logic)
-        return SimpleNamespace(message="", thread_id="default", system_prompt=None)
+        return SimpleNamespace(message="", thread_id=None, system_prompt=None)
 
     # Extract fields manually
     message = raw_body.get('message')
     text = raw_body.get('text')
     subject = raw_body.get('subject')
-    thread_id = raw_body.get('thread_id', 'default')
+    thread_id = raw_body.get('thread_id')
     system_prompt = raw_body.get('system_prompt')
 
     # Logic: Flatten logic - if 'message' is missing, try to treat the whole body (minus meta fields) as the message
