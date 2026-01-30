@@ -14,11 +14,11 @@ if current_dir not in sys.path:
     sys.path.append(current_dir)
 
 
-from monitoring_agent.core.ingestor import EmailIngestor
-from monitoring_agent.core.config import SYSTEM_PROMPT
-from monitoring_agent.core.prompts import MAINTENANCE_EXECUTOR_PROMPT, MAINTENANCE_VALIDATOR_PROMPT
-from monitoring_agent.core.utils import setup_logging, process_incoming_request
-from monitoring_agent.core.lifecycle import lifespan, api_context
+from core.ingestor import EmailIngestor
+from core.config import SYSTEM_PROMPT
+from core.prompts import MAINTENANCE_EXECUTOR_PROMPT, MAINTENANCE_VALIDATOR_PROMPT
+from core.utils import setup_logging, process_incoming_request
+from core.lifecycle import lifespan, api_context
 
 logger = setup_logging("api_server")
 

@@ -95,10 +95,10 @@ export default {
         return {
             selectedMaintenanceID: undefined,
             statusOrderList: {
-                "under-maintenance": 1000,
-                "scheduled": 900,
-                "inactive": 800,
-                "ended": 700,
+                "under-maintenance": 4,
+                "scheduled": 3,
+                "inactive": 2,
+                "ended": 1,
                 "unknown": 0,
             },
             scanning: false,
@@ -109,11 +109,30 @@ export default {
             let result = Object.values(this.$root.maintenanceList);
 
             result.sort((m1, m2) => {
-                if (this.statusOrderList[m1.status] === this.statusOrderList[m2.status]) {
-                    return m1.title.localeCompare(m2.title);
-                } else {
-                    return this.statusOrderList[m1.status] < this.statusOrderList[m2.status];
+                const s1 = m1.status || "unknown";
+                const s2 = m2.status || "unknown";
+                
+                const p1 = this.statusOrderList[s1] || 0;
+                const p2 = this.statusOrderList[s2] || 0;
+
+                // 1. Primary Sort: Status Priority (Descending)
+                // Under Maintenance > Scheduled > Inactive > Ended
+                if (p1 !== p2) {
+                    return p2 - p1;
                 }
+
+                // 2. Secondary Sort: Start Date (Ascending - "First to start")
+                // For "Ended", maybe we want Descending End Date (Recently ended)?
+                // But user said "recent or first to start on start date" -> ambiguous.
+                // Let's stick to Start Date Ascending for now as it makes sense for schedule.
+                const d1 = new Date(m1.start_date).getTime();
+                const d2 = new Date(m2.start_date).getTime();
+                
+                if (d1 !== d2) {
+                    return d1 - d2;
+                }
+                
+                return m1.title.localeCompare(m2.title);
             });
 
             return result;

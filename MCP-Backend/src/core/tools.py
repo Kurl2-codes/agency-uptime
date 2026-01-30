@@ -5,7 +5,7 @@ from mcp import ClientSession
 from .database import query_mariadb_history, get_quick_stats_db
 from .domain_utils import check_domain_expiry
 
-logger = logging.getLogger("monitoring_agent.tools")
+logger = logging.getLogger("core.tools")
 
 async def create_langchain_tools(session: ClientSession):
     """
@@ -64,7 +64,7 @@ async def create_langchain_tools(session: ClientSession):
     lc_tools.append(stats_tool)
 
     # 5. Add Global Latency Tool
-    from ..tools.multi_region import check_global_latency
+    from tools.multi_region import check_global_latency
     latency_tool = StructuredTool.from_function(
         func=None,
         coroutine=check_global_latency,
@@ -74,7 +74,7 @@ async def create_langchain_tools(session: ClientSession):
     lc_tools.append(latency_tool)
 
     # 6. Add Email Maintenance Scan Tool
-    from ..tools.email_tools import scan_maintenance_emails
+    from tools.email_tools import scan_maintenance_emails
     email_tool = StructuredTool.from_function(
         func=scan_maintenance_emails,
         name="scanMaintenanceEmails",
@@ -83,7 +83,7 @@ async def create_langchain_tools(session: ClientSession):
     lc_tools.append(email_tool)
 
     # 7. Add Maintenance Record Tool
-    from ..tools.maintenance_tools import fetch_maintenance_records
+    from tools.maintenance_tools import fetch_maintenance_records
     maintenance_tool = StructuredTool.from_function(
         func=fetch_maintenance_records,
         name="getMaintenanceList",
@@ -92,7 +92,7 @@ async def create_langchain_tools(session: ClientSession):
     lc_tools.append(maintenance_tool)
 
     # 7.5. Add Maintenance SAVE Tool (SQL)
-    from ..tools.maintenance_tools import save_maintenance_record
+    from tools.maintenance_tools import save_maintenance_record
     save_tool = StructuredTool.from_function(
         func=save_maintenance_record,
         name="saveMaintenanceRecord",
@@ -101,7 +101,7 @@ async def create_langchain_tools(session: ClientSession):
     lc_tools.append(save_tool)
     
     # 8. Add Outbound Notification Tool (Reply via n8n)
-    from ..tools.email_tools import send_webhook_notification
+    from tools.email_tools import send_webhook_notification
     notification_tool = StructuredTool.from_function(
         func=None,
         coroutine=send_webhook_notification,

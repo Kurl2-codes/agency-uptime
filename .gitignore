@@ -13,7 +13,7 @@ __pycache__/
 # Runtime data
 mariadb-data/
 uptime-kuma/data/
-mcp-monitoring/logs/
+MCP-Backend/logs/
 *.log
 
 # IDE
@@ -21,4 +21,4 @@ mcp-monitoring/logs/
 .idea/
 
 # Secrets
-mcp-monitoring/mcp_server_config.json
+MCP-Backend/mcp_server_config.json

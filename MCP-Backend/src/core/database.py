@@ -6,7 +6,7 @@ from datetime import datetime
 import mysql.connector
 from mysql.connector import pooling
 
-logger = logging.getLogger("monitoring_agent.database")
+logger = logging.getLogger("core.database")
 
 # Global Connection Pool
 _db_pool = None

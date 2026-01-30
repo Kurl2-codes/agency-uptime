@@ -4,11 +4,14 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv()
+# Load environment variables from project root (agency-uptime/.env)
+# config.py -> core -> src -> mcp-monitoring -> agency-uptime
+env_path = Path(__file__).parent.parent.parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 # Determine project root (relative to this file: src/monitoring_agent/core/config.py -> ... -> ... -> root)
 # Parent of core is monitoring_agent, parent of that is src, parent of that is root.
-PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+PROJECT_ROOT = Path(__file__).parent.parent.parent
 CONFIG_PATH = PROJECT_ROOT / "mcp_server_config.json"
 
 import sys

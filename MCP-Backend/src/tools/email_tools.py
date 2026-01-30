@@ -3,16 +3,16 @@ import sys
 import os
 
 # Ensure we can import from src
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
-logger = logging.getLogger("monitoring_agent.tools.email")
+logger = logging.getLogger("tools.email")
 
 def scan_maintenance_emails(hours: int = 24):
     """
     Scans the local ingestion queue (populated by n8n webhook) for maintenance emails.
     """
     # NEW: Fetch from Ingestor
-    from ..core.ingestor import EmailIngestor
+    from core.ingestor import EmailIngestor
     ingestor = EmailIngestor()
     emails = ingestor.get_pending_emails()
     

@@ -20,12 +20,11 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-  mcp-monitoring:
+  mcp-agent:
     build:
-      context: ./mcp-monitoring
+      context: ./MCP-Backend
     env_file:
       - .env
-      - ./mcp-monitoring/.env
     container_name: mcp-agent
     extra_hosts:
       - "host.docker.internal:host-gateway"

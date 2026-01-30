@@ -3,7 +3,7 @@ import requests
 import os
 import json
 
-logger = logging.getLogger("monitoring_agent.tools.maintenance")
+logger = logging.getLogger("tools.maintenance")
 
 def fetch_maintenance_records(limit: int = 10):
     """
