@@ -747,6 +747,102 @@ router.get("/api/reports/shift-summary", cache("5 minutes"), async (request, res
     }
 });
 
+// Create Maintenance manually (for API/Agent use)
+router.post("/api/maintenance/create", async (request, response) => {
+    try {
+        const {
+            title,
+            description,
+            start_date,
+            end_date,
+            affected_monitors = [],
+            status_pages = []
+        } = request.body;
+
+        const Maintenance = require("../model/maintenance");
+        log.info("api", `Received Maintenance Creation Request: ${title}`);
+
+        // 1. Basic Validation
+        if (!title || !start_date || !end_date) {
+            throw new Error("Missing required fields: title, start_date, or end_date");
+        }
+
+        // 2. Prepare Maintenance Bean
+        let bean = R.dispense("maintenance");
+        bean.title = title;
+        bean.description = description || "";
+        bean.user_id = 1; // Default to Admin
+        bean.active = 1;
+        bean.strategy = "single";
+        bean.start_date = start_date;
+        bean.end_date = end_date;
+        bean.timezone = "SAME_AS_SERVER"; // Simplify for now
+
+        // Store to get ID
+        await R.store(bean);
+        const maintenanceID = bean.id;
+
+        log.info("api", `Created Maintenance ID: ${maintenanceID}`);
+
+        // 3. Link Monitors
+        // Input: List of Monitor NAMES. We need to find their IDs.
+        if (Array.isArray(affected_monitors) && affected_monitors.length > 0) {
+            for (const monName of affected_monitors) {
+                // Fuzzy search for monitor ID
+                const monitor = await R.getRow("SELECT id FROM monitor WHERE name LIKE ? LIMIT 1", [`%${monName}%`]);
+                if (monitor) {
+                    let link = R.dispense("monitor_maintenance");
+                    link.monitor_id = monitor.id;
+                    link.maintenance_id = maintenanceID;
+                    await R.store(link);
+                }
+            }
+        }
+
+        // 4. Link Status Pages
+        // Input: List of Status Page NAMES/SLUGS
+        // If empty, link to default ID 1
+        const spList = (Array.isArray(status_pages) && status_pages.length > 0) ? status_pages : [];
+        if (spList.length === 0) {
+            // Link to default
+            try {
+                await R.exec("INSERT INTO maintenance_status_page (status_page_id, maintenance_id) VALUES (1, ?)", [maintenanceID]);
+            } catch (e) { } // Ignore if ID 1 doesn't exist
+        } else {
+            for (const spName of spList) {
+                const sp = await R.getRow("SELECT id FROM status_page WHERE title LIKE ? OR slug LIKE ? LIMIT 1", [`%${spName}%`, `%${spName}%`]);
+                if (sp) {
+                    let link = R.dispense("maintenance_status_page");
+                    link.status_page_id = sp.id;
+                    link.maintenance_id = maintenanceID;
+                    await R.store(link);
+                }
+            }
+        }
+
+        // 5. CRITICAL: Update Cache & Broadcast
+        // This is what makes it visible immediately without restart!
+        server.maintenanceList[maintenanceID] = bean; // Add to memory cache
+        await bean.run(true); // Schedule start/end timers logic
+
+        // Broadcast to all connected clients (Dashboard update)
+        io.emit("maintenanceList", await server.getMaintenanceJSONList(1));
+
+        response.json({
+            ok: true,
+            msg: "Maintenance created and broadcasted successfully.",
+            maintenance_id: maintenanceID
+        });
+
+    } catch (e) {
+        log.error("api", e);
+        response.status(500).json({
+            ok: false,
+            msg: e.message
+        });
+    }
+});
+
 // POC: Maintenance from Email
 router.post("/api/maintenance/scan-emails", async (request, response) => {
     try {
