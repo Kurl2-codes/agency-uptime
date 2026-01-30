@@ -13,7 +13,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.append(current_dir)
 
-# Import Core Modules
+
 from monitoring_agent.core.ingestor import EmailIngestor
 from monitoring_agent.core.config import SYSTEM_PROMPT
 from monitoring_agent.core.prompts import MAINTENANCE_EXECUTOR_PROMPT, MAINTENANCE_VALIDATOR_PROMPT
@@ -68,7 +68,8 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 class WebhookEmailPayload(BaseModel):
     subject: str
-    body: str
+    body: str | None = None
+    text: str | None = None
     sender: str | None = None
     date: str | None = None
 
@@ -78,11 +79,22 @@ async def webhook_ingest_email(payload: WebhookEmailPayload):
     Endpoint for n8n to push maintenance emails to.
     """
     ingestor = EmailIngestor()
-    success = ingestor.add_email(payload.model_dump())
+    data = payload.model_dump()
+    
+    # Handle n8n sending 'text' instead of 'body'
+    if not data.get("body") and data.get("text"):
+        data["body"] = data.get("text")
+        
+    success = ingestor.add_email(data)
     if success:
         return {"status": "received", "queue_size": ingestor.peek_count()}
     else:
         raise HTTPException(status_code=400, detail="Invalid payload")
+
+@app.post("/chats", response_model=ChatResponse)
+async def chat_endpoint_alias(request: Request):
+    """Alias for /chat due to typo in n8n"""
+    return await chat_endpoint(request)
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(request: Request):
@@ -112,10 +124,15 @@ async def chat_endpoint(request: Request):
         input_messages = []
 
         # --- PERSONA SWITCHING LOGIC ---
-        # PRIORITY 1: Explicit Save Mode
+        # PRIORITY 1: Explicit Save Mode / Executor Mode (The SAVER)
         if internal_req.system_prompt == "MAINTENANCE_SAVE":
-             logger.info("Persona: MAINTENANCE EXECUTOR")
+             logger.info("Persona: MAINTENANCE EXECUTOR (Saver)")
              input_messages.append(SystemMessage(content=MAINTENANCE_EXECUTOR_PROMPT))
+
+        # PRIORITY 1.5: The NLP Translator/Validator (User calls this Maintenance_EXECUTOR)
+        elif internal_req.system_prompt == "Maintenance_EXECUTOR":
+             logger.info("Persona: MAINTENANCE VALIDATOR (Translator)")
+             input_messages.append(SystemMessage(content=MAINTENANCE_VALIDATOR_PROMPT))
 
         # PRIORITY 2: Explicit Maintenance Mode
         elif internal_req.system_prompt == "MAINTENANCE_MODE":

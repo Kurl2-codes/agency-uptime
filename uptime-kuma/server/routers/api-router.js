@@ -58,6 +58,62 @@ router.get("/api/maintenance", async (request, response) => {
     }
 });
 
+// Internal API to create maintenance (Agent / n8n)
+router.post("/api/maintenance", async (request, response) => {
+    allowDevAllOrigin(response);
+    try {
+        const Maintenance = require("../model/maintenance");
+        let maintenance = request.body;
+
+        // Create Bean
+        let bean = await Maintenance.jsonToBean(R.dispense("maintenance"), maintenance);
+        bean.user_id = 1; // Default to Admin
+        let maintenanceID = await R.store(bean);
+
+        // Link Monitors
+        if (maintenance.monitors && Array.isArray(maintenance.monitors)) {
+            for (const monitorID of maintenance.monitors) {
+                let linkBean = R.dispense("monitor_maintenance");
+                linkBean.monitor_id = monitorID;
+                linkBean.maintenance_id = maintenanceID;
+                await R.store(linkBean);
+            }
+        }
+
+        // Link Status Pages
+        if (maintenance.status_pages && Array.isArray(maintenance.status_pages)) {
+            for (const spID of maintenance.status_pages) {
+                let spBean = R.dispense("maintenance_status_page");
+                spBean.status_page_id = spID;
+                spBean.maintenance_id = maintenanceID;
+                await R.store(spBean);
+            }
+        }
+
+        // Add to Server Cache & Run
+        server.maintenanceList[maintenanceID] = bean;
+        await bean.run(true);
+
+        // Broadcast
+        io.to("username").emit("maintenanceList", await server.getMaintenanceJSONList(1)); // Broadcast to admin? Or public?
+        // Actually, just broadcast global list?
+        // server.sendMaintenanceList(socket) requires a socket. 
+        // We can replicate logic:
+        const list = await server.getMaintenanceJSONList(1);
+        io.emit("maintenanceList", list);
+
+        response.json({
+            ok: true,
+            msg: "successAdded",
+            maintenanceID,
+        });
+
+    } catch (e) {
+        log.error("api", e);
+        response.status(500).json({ ok: false, msg: e.message });
+    }
+});
+
 router.all("/api/push/:pushToken", async (request, response) => {
     try {
         let pushToken = request.params.pushToken;

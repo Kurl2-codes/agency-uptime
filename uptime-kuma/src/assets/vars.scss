@@ -25,13 +25,13 @@ $secondary-text: $taupe;
 $highlight: $liquid-lava;
 $highlight-white: #fffdf9;
 
-// Light Theme Specifics (These overrides are crucial)
-$dark-font-color: $obsidian-blue; // Primary Text is now Dark
-$dark-font-color2: $taupe; // Secondary Text
-$dark-bg: $white; // Main Background is White
-$dark-bg2: $white; // Card Background is White
-$dark-header-bg: $white;
-$dark-border-color: #dee2e6; // Standard light border
+// Dark Theme Specifics
+$dark-font-color: $white; // Primary Text is White
+$dark-font-color2: $light-grey; // Secondary Text
+$dark-bg: $obsidian-blue; // Main Background is Obsidian Blue
+$dark-bg2: $obsidian-eclipse; // Card Background is Obsidian Eclipse
+$dark-header-bg: $obsidian-blue;
+$dark-border-color: $obsidian-tide; // Darker border for dark mode
 
 $easing-in: cubic-bezier(0.54, 0.78, 0.55, 0.97);
 $easing-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
