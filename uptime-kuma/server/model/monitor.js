@@ -410,6 +410,7 @@ class Monitor extends BeanModel {
             bean.monitor_id = this.id;
             bean.time = R.isoDateTimeMillis(dayjs.utc());
             bean.status = DOWN;
+            bean.msg = "";
             bean.downCount = previousBeat?.downCount || 0;
 
             if (this.isUpsideDown()) {
@@ -882,9 +883,49 @@ class Monitor extends BeanModel {
             } catch (error) {
 
                 if (error?.name === "CanceledError") {
-                    bean.msg = `timeout by AbortSignal (${this.timeout}s)`;
+                    bean.msg = `Timeout: Request exceeded ${this.timeout}s limit`;
                 } else {
-                    bean.msg = error.message;
+                    // Build a meaningful error message from all available error properties
+                    // Some errors (e.g. ECONNRESET, ECONNREFUSED) have empty .message but populated .code
+                    let rawMsg = error.message
+                        || (error.cause ? (error.cause.message || error.cause.code) : "")
+                        || String(error);
+
+                    // Resolve the deepest error code from the chain
+                    let errorCode = error.code
+                        || error.cause?.code
+                        || "";
+
+                    // Translate common error codes into human-readable descriptions
+                    const errorDescriptions = {
+                        "ECONNRESET": "Connection reset by remote server",
+                        "ECONNREFUSED": "Connection refused by the server",
+                        "ECONNABORTED": "Connection aborted",
+                        "ETIMEDOUT": "Connection timed out",
+                        "EHOSTUNREACH": "Host is unreachable",
+                        "ENETUNREACH": "Network is unreachable",
+                        "EAI_AGAIN": "DNS lookup timed out",
+                        "ENOTFOUND": "DNS lookup failed — hostname not found",
+                        "ERR_TLS_CERT_ALTNAME_INVALID": "SSL certificate hostname mismatch",
+                        "CERT_HAS_EXPIRED": "SSL certificate has expired",
+                        "DEPTH_ZERO_SELF_SIGNED_CERT": "Self-signed SSL certificate rejected",
+                        "UNABLE_TO_VERIFY_LEAF_SIGNATURE": "SSL certificate chain incomplete",
+                        "ERR_NETWORK": "Network error — server may be offline",
+                        "ERR_BAD_RESPONSE": "Bad response from server",
+                        "ECONNABORTED": "Connection aborted by the server",
+                        "EPIPE": "Connection broken (broken pipe)",
+                        "ESOCKETTIMEDOUT": "Socket timed out",
+                    };
+
+                    if (errorCode && errorDescriptions[errorCode]) {
+                        bean.msg = errorDescriptions[errorCode];
+                    } else if (rawMsg && rawMsg.trim() !== "") {
+                        bean.msg = rawMsg;
+                    } else if (errorCode) {
+                        bean.msg = `Connection failed (${errorCode})`;
+                    } else {
+                        bean.msg = "Connection failed (no error details available)";
+                    }
                 }
 
                 // If UP come in here, it must be upside down mode
