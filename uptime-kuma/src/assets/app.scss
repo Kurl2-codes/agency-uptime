@@ -173,7 +173,7 @@ optgroup {
     .dark & {
         background-color: $liquid-lava;
         border-color: $liquid-lava;
-        color: $white;
+        color: $white !important; // Force white for better contrast
     }
 }
 
@@ -341,7 +341,7 @@ optgroup {
         &:not(.alert) {
             background-color: $obsidian-eclipse !important; // Obsidian Eclipse for containers
             color: $white !important;
-            border-color: $obsidian-tide;
+            border: 1px solid $obsidian-tide !important; // Ensure border is visible
         }
     }
 
@@ -410,7 +410,8 @@ optgroup {
 
     .nav-pills .nav-link.active,
     .nav-pills .show>.nav-link {
-        color: $dark-font-color2;
+        color: $white !important; // Active links should be white
+        background-color: $primary;
     }
 
     .bg-primary {

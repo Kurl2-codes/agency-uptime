@@ -1,5 +1,5 @@
 <template>
-    <div class="status-widget-card" :class="overallStatusClass">
+    <div class="status-widget-card" :class="[$root.theme, overallStatusClass]">
         <div class="status-content">
             <div class="status-indicator">
                 <div class="pulsing-dot"></div>
@@ -110,8 +110,8 @@ export default {
 @import "../assets/vars.scss";
 
 .status-widget-card {
-    background-color: $obsidian-blue;
-    color: white;
+    background-color: var(--bs-body-bg, #fff);
+    color: var(--bs-body-color, #000);
     font-family: 'Inter', sans-serif;
     padding: 24px;
     height: 100vh; /* Occupy full iframe */
@@ -120,7 +120,11 @@ export default {
     justify-content: space-between;
     box-sizing: border-box;
     overflow: hidden;
-    
+
+    .dark & {
+        background-color: $obsidian-blue;
+        color: white;
+    }
     // Status Colors
     &.status-up { 
         --status-color: #{$status-up}; 
