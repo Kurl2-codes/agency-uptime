@@ -218,8 +218,8 @@ export default {
         color: #fff;
 
         .dark & {
-            background-color: $primary;
-            color: #000;
+            background-color: lighten($primary, 10%); // Slightly lighter for hover
+            color: $white; // Ensure text is white
         }
 
         &.active {

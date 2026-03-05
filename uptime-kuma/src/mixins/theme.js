@@ -3,33 +3,40 @@ export default {
     data() {
         return {
             system: (window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light",
-            userTheme: localStorage.theme,
-            userHeartbeatBar: localStorage.heartbeatBarTheme,
-            styleElapsedTime: localStorage.styleElapsedTime,
+            userTheme: localStorage.theme || "auto",
+            userHeartbeatBar: localStorage.heartbeatBarTheme || "normal",
+            styleElapsedTime: localStorage.styleElapsedTime || "no-line",
             statusPageTheme: "light",
             forceStatusPageTheme: false,
             path: "",
+            mediaQueryList: null,
         };
     },
 
     mounted() {
-        // Default Light
-        if (! this.userTheme) {
-            this.userTheme = "auto";
+        // System Theme Change Listener
+        this.mediaQueryList = window.matchMedia("(prefers-color-scheme: dark)");
+        if (this.mediaQueryList.addEventListener) {
+            this.mediaQueryList.addEventListener("change", this.onSystemThemeChange);
+        } else if (this.mediaQueryList.addListener) {
+            this.mediaQueryList.addListener(this.onSystemThemeChange);
         }
 
-        // Default Heartbeat Bar
-        if (!this.userHeartbeatBar) {
-            this.userHeartbeatBar = "normal";
-        }
-
-        // Default Elapsed Time Style
-        if (!this.styleElapsedTime) {
-            this.styleElapsedTime = "no-line";
-        }
+        // Initialize path from location
+        this.path = window.location.pathname;
 
         document.body.classList.add(this.theme);
         this.updateThemeColorMeta();
+    },
+
+    beforeUnmount() {
+        if (this.mediaQueryList) {
+            if (this.mediaQueryList.removeEventListener) {
+                this.mediaQueryList.removeEventListener("change", this.onSystemThemeChange);
+            } else if (this.mediaQueryList.removeListener) {
+                this.mediaQueryList.removeListener(this.onSystemThemeChange);
+            }
+        }
     },
 
     computed: {
@@ -43,9 +50,9 @@ export default {
             }
 
             // Entry no need dark
-            if (this.path === "") {
-                return "light";
-            }
+            // if (this.path === "" || this.path === "/") {
+            //     return "light";
+            // }
 
             if (this.path.startsWith("/status-page") || this.path.startsWith("/status")) {
                 if (this.statusPageTheme === "auto") {
@@ -56,7 +63,7 @@ export default {
                 if (this.userTheme === "auto") {
                     return this.system;
                 }
-                return this.userTheme;
+                return this.userTheme || "light";
             }
         },
 
@@ -79,8 +86,12 @@ export default {
         },
 
         theme(to, from) {
-            document.body.classList.remove(from);
-            document.body.classList.add(this.theme);
+            if (from) {
+                document.body.classList.remove(from);
+            }
+            if (this.theme) {
+                document.body.classList.add(this.theme);
+            }
             this.updateThemeColorMeta();
         },
 
@@ -100,12 +111,23 @@ export default {
          * @returns {void}
          */
         updateThemeColorMeta() {
-            if (this.theme === "dark") {
-                document.querySelector("#theme-color").setAttribute("content", "#161B22");
-            } else {
-                document.querySelector("#theme-color").setAttribute("content", "#5cdd8b");
+            const themeColorMeta = document.querySelector("#theme-color");
+            if (themeColorMeta) {
+                if (this.theme === "dark") {
+                    themeColorMeta.setAttribute("content", "#0C1422");
+                } else {
+                    themeColorMeta.setAttribute("content", "#5cdd8b");
+                }
             }
+        },
+
+        /**
+         * Handle system theme change
+         * @param {MediaQueryListEvent} e Event
+         * @returns {void}
+         */
+        onSystemThemeChange(e) {
+            this.system = e.matches ? "dark" : "light";
         }
     }
 };
-
